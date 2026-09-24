@@ -81,24 +81,37 @@ function mapUiToDb(name: string, data: Record<string, any>) {
   switch (name) {
     case 'pricing':
       return {
-        ...data,
-        package_name: data.packageName ?? data.package_name,
+        package_name: data.packageName ?? data.package_name ?? '',
+        price: data.price ?? '',
+        description: data.description ?? '',
+        order: Number(data.order ?? 0),
       };
     case 'testimonials':
       return {
-        ...data,
-        client_name: data.clientName ?? data.client_name,
-        business_name: data.businessName ?? data.business_name,
+        client_name: data.clientName ?? data.client_name ?? '',
+        business_name: data.businessName ?? data.business_name ?? '',
+        text: data.text ?? '',
+        order: Number(data.order ?? 0),
       };
     case 'projects':
       return {
-        ...data,
-        image_url: data.imageUrl ?? data.image_url,
+        title: data.title ?? '',
+        category: data.category ?? data.type ?? '',
+        tag: data.tag ?? '',
+        description: data.description ?? '',
+        image_url: data.imageUrl ?? data.image_url ?? '',
+        order: Number(data.order ?? 0),
       };
     case 'client_inquiries':
       return {
-        ...data,
-        project_details: data.projectDetails ?? data.project_details,
+        name: data.name ?? '',
+        business: data.business ?? '',
+        email: data.email ?? '',
+        phone: data.phone ?? '',
+        service: data.service ?? '',
+        budget: data.budget ?? '',
+        project_details: data.projectDetails ?? data.project_details ?? '',
+        status: data.status ?? 'New',
       };
     default:
       return data;
