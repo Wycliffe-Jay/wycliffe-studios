@@ -20,13 +20,6 @@ import {
   query,
   type DocumentData,
 } from 'firebase/firestore';
-import {
-  getStorage,
-  ref as storageRef,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject,
-} from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCztg9A-1e0obIBAQZvBJSLG1qLEAYivk',
@@ -40,7 +33,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app);
 
 export const ADMIN_UID = 'vNJmOaLhwsgw95QrHtP0hqoFuqm1';
 
@@ -112,43 +104,64 @@ export async function updateInquiryStatus(id: string, status: string) {
   await setDoc(doc(db, 'client_inquiries', id), { status }, { merge: true });
 }
 
+const CLOUDINARY_CLOUD_NAME = 'sqzpc1s7';
+const CLOUDINARY_UPLOAD_PRESET = 'wycliffe_portfolio';
+const CLOUDINARY_UPLOAD_URL =
+  'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/image/upload';
+
+const ALLOWED_IMAGE_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+]);
+
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+
 export function uploadImage(
   file: File,
-  folder = 'site-images',
+  _folder = 'portfolio',
   onProgress?: (progress: number) => void,
 ): Promise<string> {
-  if (!file.type.startsWith('image/')) {
-    return Promise.reject(new Error('Please select an image file.'));
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    return Promise.reject(new Error('Please select a PNG, JPG, JPEG, WEBP, or GIF image.'));
   }
-  if (file.size > 10 * 1024 * 1024) {
+
+  if (file.size > MAX_IMAGE_SIZE) {
     return Promise.reject(new Error('Image must be 10 MB or smaller.'));
   }
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
-  const uniqueName = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '-' + safeName;
-  const fileRef = storageRef(storage, folder + '/' + uniqueName);
-  const task = uploadBytesResumable(fileRef, file, { contentType: file.type });
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
   return new Promise((resolve, reject) => {
-    task.on(
-      'state_changed',
-      snapshot => {
-        const progress = snapshot.totalBytes ? (snapshot.bytesTransferred / snapshot.totalBytes) * 100 : 0;
-        onProgress?.(Math.round(progress));
-      },
-      error => reject(error),
-      async () => {
-        try {
-          resolve(await getDownloadURL(task.snapshot.ref));
-        } catch (error) {
-          reject(error);
-        }
-      },
-    );
-  });
-}
+    const xhr = new XMLHttpRequest();
 
-export async function deleteUploadedImage(downloadUrl: string) {
-  if (!downloadUrl.includes('firebasestorage.googleapis.com')) return;
-  await deleteObject(storageRef(storage, downloadUrl));
+    xhr.open('POST', CLOUDINARY_UPLOAD_URL);
+    xhr.responseType = 'json';
+
+    xhr.upload.addEventListener('progress', event => {
+      if (event.lengthComputable) {
+        onProgress?.(Math.round((event.loaded / event.total) * 100));
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      const response = xhr.response as { secure_url?: string; error?: { message?: string } } | null;
+
+      if (xhr.status >= 200 && xhr.status < 300 && response?.secure_url) {
+        onProgress?.(100);
+        resolve(response.secure_url);
+        return;
+      }
+
+      reject(new Error(response?.error?.message || 'Cloudinary image upload failed.'));
+    });
+
+    xhr.addEventListener('error', () => reject(new Error('Could not connect to Cloudinary.')));
+    xhr.addEventListener('abort', () => reject(new Error('Image upload was cancelled.')));
+
+    xhr.send(formData);
+  });
 }
