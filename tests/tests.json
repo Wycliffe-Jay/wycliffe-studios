@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Public site loads Firebase content",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": ["Firestore-backed public content loading"],
+    "description": "Verifies the public site can render with Firebase-backed content and its built-in fallbacks.",
+    "steps": ["Open the Wycliffe Studios home page", "Wait for the page content to load"],
+    "expected": "The hero, services, pricing, portfolio, and contact sections are visible."
+  },
+  {
+    "name": "Admin signs in with Firebase",
+    "viewport": "desktop",
+    "covers": ["Firebase Authentication admin sign-in"],
+    "description": "Verifies the admin route presents a Firebase email/password login.",
+    "steps": ["Open the Admin link in the footer"],
+    "expected": "The Wycliffe Studios admin login shows email and password fields."
+  },
+  {
+    "name": "Quote request saves a lead",
+    "viewport": "mobile",
+    "covers": ["client_inquiries public create", "quote form"],
+    "description": "Verifies a visitor can submit the quote form and the app attempts to persist the lead before opening WhatsApp.",
+    "steps": ["Open Contact", "Fill name, email, phone, service, budget, and project details", "Submit the quote"],
+    "expected": "A WhatsApp quote message opens and the submission is written to client_inquiries."
+  }
+]
