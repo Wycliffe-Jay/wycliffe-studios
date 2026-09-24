@@ -1027,3 +1027,7 @@ footer p {
     margin: 0;
   }
 }
+
+.image-placeholder{width:100%;height:100%;display:grid;place-items:center;background:linear-gradient(135deg,#0b1d3b,#1759c9);padding:25px;text-align:center}
+.image-placeholder-inner{max-width:180px;color:#dbe8fb;font-size:12px;font-weight:700;line-height:1.5}
+.modal-placeholder{min-height:260px}
