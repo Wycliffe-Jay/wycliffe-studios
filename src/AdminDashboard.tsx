@@ -22,7 +22,7 @@ import {
   deleteCollectionItem,
   uploadImage,
   updateInquiryStatus,
-} from './firebase';
+} from './supabase';
 import { defaultContent, type EditableContent } from './siteContent';
 
 type User = { email?: string | null; uid?: string };
@@ -140,7 +140,7 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
       setContent(next);
       setInquiries(inquiryDocs as Inquiry[]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load Firebase data.');
+      setError(e instanceof Error ? e.message : 'Could not load Supabase data.');
     } finally {
       setBusy(false);
     }
@@ -207,7 +207,7 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
       ]);
 
       await load();
-      setNotice('All changes saved to Firebase.');
+      setNotice('All changes saved to Supabase.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save changes.');
     } finally {
@@ -230,7 +230,7 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
   };
 
   if (busy) {
-    return <div className="admin-shell"><div className="admin-loading">Loading Firebase…</div></div>;
+    return <div className="admin-shell"><div className="admin-loading">Loading Supabase…</div></div>;
   }
 
   if (!user) {
@@ -239,7 +239,7 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
         <div className="admin-login">
           <div className="brand-mark">W</div>
           <h1>Wycliffe Studios Admin</h1>
-          <p>Sign in with your Firebase admin account.</p>
+          <p>Sign in with your Supabase admin account.</p>
           <Field label="Email" value={email} onChange={setEmail} />
           <Field label="Password" value={password} onChange={setPassword} type="password" />
           <button
