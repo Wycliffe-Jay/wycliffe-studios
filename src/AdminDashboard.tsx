@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Save, LogOut, ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import {
+  Save,
+  LogOut,
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Upload,
+  Image as ImageIcon,
+  RefreshCw,
+  CheckCircle2,
+} from 'lucide-react';
 import {
   ADMIN_UID,
   signInAdmin,
@@ -9,10 +19,14 @@ import {
   readSection,
   readCollection,
   saveCollectionItem,
+  deleteCollectionItem,
+  uploadImage,
+  updateInquiryStatus,
 } from './firebase';
 import { defaultContent, type EditableContent } from './siteContent';
 
 type User = { email?: string | null; uid?: string };
+
 type Inquiry = {
   id: string;
   name: string;
@@ -24,6 +38,8 @@ type Inquiry = {
   projectDetails: string;
   status: string;
 };
+
+type Project = EditableContent['projects'][number];
 
 export default function AdminDashboard({ onBack }: { onBack: () => void }) {
   const [user, setUser] = useState<User | null>(null);
@@ -91,32 +107,33 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
       }
 
       if (services.length) {
-        next.services = services.map((s: any) => ({
+        next.services = services.map((s: any, index) => ({
           id: s.id,
           title: s.name ?? s.title ?? '',
           text: s.description ?? s.text ?? '',
-          order: Number(s.order ?? 0),
+          order: Number(s.order ?? index + 1),
         }));
       }
 
       if (prices.length) {
-        next.prices = prices.map((p: any) => ({
+        next.prices = prices.map((p: any, index) => ({
           id: p.id,
           title: p.packageName ?? p.title ?? '',
           description: p.description ?? '',
           price: p.price ?? '',
-          order: Number(p.order ?? 0),
+          order: Number(p.order ?? index + 1),
         }));
       }
 
       if (projects.length) {
-        next.projects = projects.map((p: any) => ({
+        next.projects = projects.map((p: any, index) => ({
           id: p.id,
           title: p.title ?? '',
-          type: p.category ?? '',
-          tag: p.category ?? '',
+          type: p.category ?? p.type ?? '',
+          tag: p.tag ?? p.category ?? '',
           description: p.description ?? '',
           imageUrl: p.imageUrl ?? '',
+          order: Number(p.order ?? index + 1),
         }));
       }
 
@@ -162,28 +179,53 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
           whatsapp: content.whatsapp,
           instagram: content.instagram,
         }),
-        ...content.services.map(service =>
+        ...content.services.map((service, index) =>
           saveCollectionItem('services', service.id, {
             name: service.title,
             description: service.text,
-            order: service.order,
+            order: Number(service.order || index + 1),
           }),
         ),
-        ...content.prices.map(price =>
+        ...content.prices.map((price, index) =>
           saveCollectionItem('pricing', price.id, {
             packageName: price.title,
             price: price.price,
             description: price.description,
-            order: price.order,
+            order: Number(price.order || index + 1),
+          }),
+        ),
+        ...content.projects.map((project, index) =>
+          saveCollectionItem('projects', project.id, {
+            title: project.title,
+            category: project.type,
+            tag: project.tag,
+            description: project.description,
+            imageUrl: project.imageUrl || '',
+            order: Number(project.order || index + 1),
           }),
         ),
       ]);
 
-      setNotice('Saved to Firebase.');
+      await load();
+      setNotice('All changes saved to Firebase.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save changes.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const removeItem = async (
+    collectionName: 'services' | 'pricing' | 'projects',
+    id: string | undefined,
+    update: () => void,
+  ) => {
+    try {
+      if (id) await deleteCollectionItem(collectionName, id);
+      update();
+      setNotice('Item removed.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not remove item.');
     }
   };
 
@@ -231,22 +273,23 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
         <div className="admin-header-actions">
           <button className="text-button" onClick={onBack}><ArrowLeft size={15} /> Website</button>
           <button className="secondary-admin" onClick={() => signOutAdmin()}><LogOut size={16} /> Sign out</button>
-          <button className="primary" disabled={saving} onClick={save}><Save size={17} /> {saving ? 'Saving…' : 'Save changes'}</button>
+          <button className="secondary-admin" disabled={busy} onClick={() => void load()}><RefreshCw size={15} /> Refresh</button>
+          <button className="primary" disabled={saving} onClick={save}><Save size={17} /> {saving ? 'Saving…' : 'Save all'}</button>
         </div>
       </header>
 
-      {notice && <div className="admin-success">{notice}</div>}
+      {notice && <div className="admin-success"><CheckCircle2 size={16} /> {notice}</div>}
       {error && <div className="admin-error">{error}</div>}
 
       <div className="admin-grid">
         <section className="admin-card">
-          <h2>Hero</h2>
+          <h2>Hero & first impression</h2>
           <Field label="Eyebrow" value={content.heroEyebrow} onChange={v => setContent(c => ({ ...c, heroEyebrow: v }))} />
           <Field label="Headline" value={content.heroTitle} onChange={v => setContent(c => ({ ...c, heroTitle: v }))} />
           <Field label="Highlighted text" value={content.heroEmphasis} onChange={v => setContent(c => ({ ...c, heroEmphasis: v }))} />
           <Field label="Description" value={content.heroDescription} multiline onChange={v => setContent(c => ({ ...c, heroDescription: v }))} />
           <Field label="Statement label" value={content.statementLabel} onChange={v => setContent(c => ({ ...c, statementLabel: v }))} />
-          <Field label="Statement" value={content.statement} onChange={v => setContent(c => ({ ...c, statement: v }))} />
+          <Field label="Statement" value={content.statement} multiline onChange={v => setContent(c => ({ ...c, statement: v }))} />
         </section>
 
         <section className="admin-card">
@@ -258,7 +301,7 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
         </section>
 
         <section className="admin-card">
-          <h2>Contact</h2>
+          <h2>Contact & social</h2>
           <Field label="Heading" value={content.contactTitle} onChange={v => setContent(c => ({ ...c, contactTitle: v }))} />
           <Field label="Description" value={content.contactDescription} multiline onChange={v => setContent(c => ({ ...c, contactDescription: v }))} />
           <Field label="Email" value={content.email} onChange={v => setContent(c => ({ ...c, email: v }))} />
@@ -268,36 +311,108 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
         </section>
 
         <section className="admin-card admin-wide">
-          <h2>Services</h2>
+          <div className="admin-section-head">
+            <div>
+              <h2>Services</h2>
+              <p className="admin-help">Add, edit, reorder, or remove the services shown on your website.</p>
+            </div>
+            <button className="add-button" type="button" onClick={() => setContent(c => ({
+              ...c,
+              services: [...c.services, { title: 'New service', text: 'Describe this service.', order: c.services.length + 1 }],
+            }))}><Plus size={15} /> Add service</button>
+          </div>
           {content.services.map((service, i) => (
-            <div className="mini-editor" key={service.id ?? i}>
-              <Field label={'Service ' + (i + 1)} value={service.title} onChange={v => setContent(c => ({ ...c, services: c.services.map((x, n) => n === i ? { ...x, title: v } : x) }))} />
+            <div className="mini-editor" key={service.id ?? 'new-service-' + i}>
+              <div className="editor-row">
+                <Field label={'Service ' + (i + 1)} value={service.title} onChange={v => setContent(c => ({ ...c, services: c.services.map((x, n) => n === i ? { ...x, title: v } : x) }))} />
+                <Field label="Order" value={String(service.order)} type="number" onChange={v => setContent(c => ({ ...c, services: c.services.map((x, n) => n === i ? { ...x, order: Number(v) || 0 } : x) }))} />
+              </div>
               <Field label="Description" value={service.text} multiline onChange={v => setContent(c => ({ ...c, services: c.services.map((x, n) => n === i ? { ...x, text: v } : x) }))} />
+              <button className="danger-button" type="button" onClick={() => void removeItem('services', service.id, () => setContent(c => ({ ...c, services: c.services.filter((_, n) => n !== i) })))}><Trash2 size={14} /> Remove service</button>
             </div>
           ))}
         </section>
 
         <section className="admin-card admin-wide">
-          <h2>Pricing</h2>
+          <div className="admin-section-head">
+            <div>
+              <h2>Pricing</h2>
+              <p className="admin-help">Control the packages, descriptions and prices displayed to potential clients.</p>
+            </div>
+            <button className="add-button" type="button" onClick={() => setContent(c => ({
+              ...c,
+              prices: [...c.prices, { title: 'New package', description: 'Describe what is included.', price: 'Custom quote', order: c.prices.length + 1 }],
+            }))}><Plus size={15} /> Add package</button>
+          </div>
           {content.prices.map((price, i) => (
-            <div className="mini-editor" key={price.id ?? i}>
-              <Field label={'Package ' + (i + 1)} value={price.title} onChange={v => setContent(c => ({ ...c, prices: c.prices.map((x, n) => n === i ? { ...x, title: v } : x) }))} />
+            <div className="mini-editor" key={price.id ?? 'new-price-' + i}>
+              <div className="editor-row">
+                <Field label={'Package ' + (i + 1)} value={price.title} onChange={v => setContent(c => ({ ...c, prices: c.prices.map((x, n) => n === i ? { ...x, title: v } : x) }))} />
+                <Field label="Order" value={String(price.order)} type="number" onChange={v => setContent(c => ({ ...c, prices: c.prices.map((x, n) => n === i ? { ...x, order: Number(v) || 0 } : x) }))} />
+              </div>
               <Field label="Description" value={price.description} multiline onChange={v => setContent(c => ({ ...c, prices: c.prices.map((x, n) => n === i ? { ...x, description: v } : x) }))} />
               <Field label="Price" value={price.price} onChange={v => setContent(c => ({ ...c, prices: c.prices.map((x, n) => n === i ? { ...x, price: v } : x) }))} />
+              <button className="danger-button" type="button" onClick={() => void removeItem('pricing', price.id, () => setContent(c => ({ ...c, prices: c.prices.filter((_, n) => n !== i) })))}><Trash2 size={14} /> Remove package</button>
             </div>
           ))}
         </section>
 
         <section className="admin-card admin-wide">
-          <h2>Client inquiries</h2>
-          <p className="admin-help">Quote requests are stored in Firebase when visitors submit the form.</p>
+          <div className="admin-section-head">
+            <div>
+              <h2>Portfolio & image storage</h2>
+              <p className="admin-help">Upload your actual design work to Firebase Storage. Images are limited to 10 MB and can be replaced whenever you want.</p>
+            </div>
+            <button className="add-button" type="button" onClick={() => setContent(c => ({
+              ...c,
+              projects: [...c.projects, { title: 'New project', type: 'Graphic Design', tag: 'Portfolio', description: 'Describe this project.', imageUrl: '', order: c.projects.length + 1 }],
+            }))}><Plus size={15} /> Add project</button>
+          </div>
+
+          {content.projects.map((project, i) => (
+            <ProjectEditor
+              key={project.id ?? 'new-project-' + i}
+              project={project}
+              index={i}
+              onChange={next => setContent(c => ({ ...c, projects: c.projects.map((x, n) => n === i ? next : x) }))}
+              onRemove={() => void removeItem('projects', project.id, () => setContent(c => ({ ...c, projects: c.projects.filter((_, n) => n !== i) })))}
+            />
+          ))}
+        </section>
+
+        <section className="admin-card admin-wide">
+          <div className="admin-section-head">
+            <div>
+              <h2>Client inquiries</h2>
+              <p className="admin-help">Quote requests are stored in Firebase. Update their status as you work through your leads.</p>
+            </div>
+          </div>
           {inquiries.length === 0 ? (
-            <p>No inquiries yet.</p>
+            <p className="empty-state">No inquiries yet.</p>
           ) : (
             inquiries.map(item => (
-              <div className="mini-editor" key={item.id}>
-                <strong>{item.name} — {item.business || 'Personal'}</strong>
-                <p>{item.service} · {item.budget} · {item.status}</p>
+              <div className="mini-editor inquiry" key={item.id}>
+                <div className="inquiry-head">
+                  <strong>{item.name} — {item.business || 'Personal'}</strong>
+                  <select
+                    value={item.status || 'New'}
+                    onChange={async e => {
+                      const status = e.target.value;
+                      try {
+                        await updateInquiryStatus(item.id, status);
+                        setInquiries(items => items.map(x => x.id === item.id ? { ...x, status } : x));
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : 'Could not update inquiry.');
+                      }
+                    }}
+                  >
+                    <option>New</option>
+                    <option>Contacted</option>
+                    <option>Won</option>
+                    <option>Lost</option>
+                  </select>
+                </div>
+                <p>{item.service} · {item.budget}</p>
                 <p>{item.email} · {item.phone}</p>
                 <p>{item.projectDetails}</p>
               </div>
@@ -308,6 +423,86 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
 
       <div className="admin-bottom-save">
         <button className="primary" disabled={saving} onClick={save}><Save size={17} /> {saving ? 'Saving…' : 'Save all changes'}</button>
+      </div>
+    </div>
+  );
+}
+
+function ProjectEditor({
+  project,
+  index,
+  onChange,
+  onRemove,
+}: {
+  project: Project;
+  index: number;
+  onChange: (project: Project) => void;
+  onRemove: () => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [uploadError, setUploadError] = useState('');
+
+  const chooseImage = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    setProgress(0);
+    setUploadError('');
+    try {
+      const url = await uploadImage(file, 'portfolio', setProgress);
+      onChange({ ...project, imageUrl: url });
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Image upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="project-editor mini-editor">
+      <div className="project-editor-top">
+        <div>
+          <strong>Project {index + 1}</strong>
+          <span>{project.id ? 'Saved project' : 'New project'}</span>
+        </div>
+        <button className="danger-button" type="button" onClick={onRemove}><Trash2 size={14} /> Remove</button>
+      </div>
+
+      <div className="project-editor-grid">
+        <div>
+          <Field label="Project title" value={project.title} onChange={v => onChange({ ...project, title: v })} />
+          <div className="editor-row">
+            <Field label="Category" value={project.type} onChange={v => onChange({ ...project, type: v })} />
+            <Field label="Tag" value={project.tag} onChange={v => onChange({ ...project, tag: v })} />
+          </div>
+          <Field label="Description" value={project.description} multiline onChange={v => onChange({ ...project, description: v })} />
+          <Field label="Order" value={String(project.order ?? index + 1)} type="number" onChange={v => onChange({ ...project, order: Number(v) || 0 })} />
+        </div>
+
+        <div className="image-uploader">
+          <div className="image-preview">
+            {project.imageUrl ? (
+              <img src={project.imageUrl} alt={project.title || 'Portfolio preview'} />
+            ) : (
+              <div className="image-empty"><ImageIcon size={28} /><span>No image uploaded</span></div>
+            )}
+          </div>
+          <label className="upload-button">
+            <Upload size={16} />
+            {uploading ? 'Uploading ' + progress + '%' : project.imageUrl ? 'Replace image' : 'Upload image'}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={e => {
+                void chooseImage(e.target.files?.[0]);
+                e.currentTarget.value = '';
+              }}
+              disabled={uploading}
+            />
+          </label>
+          <small>PNG, JPG, WEBP or GIF · max 10 MB</small>
+          {uploadError && <div className="upload-error">{uploadError}</div>}
+        </div>
       </div>
     </div>
   );
