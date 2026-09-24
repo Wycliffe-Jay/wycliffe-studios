@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import AdminDashboard from './AdminDashboard';
 import { loadSiteContent, type EditableContent } from './siteContent';
-import { createClientInquiry } from './firebase';
+import { createClientInquiry } from './supabase';
 import {
   ArrowUpRight,
   BriefcaseBusiness,
