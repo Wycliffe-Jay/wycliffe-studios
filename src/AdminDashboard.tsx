@@ -361,7 +361,7 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
           <div className="admin-section-head">
             <div>
               <h2>Portfolio & image storage</h2>
-              <p className="admin-help">Upload your actual design work to Firebase Storage. Images are limited to 10 MB and can be replaced whenever you want.</p>
+              <p className="admin-help">Upload your actual design work to Cloudinary. Images are limited to 10 MB and can be replaced whenever you want.</p>
             </div>
             <button className="add-button" type="button" onClick={() => setContent(c => ({
               ...c,
