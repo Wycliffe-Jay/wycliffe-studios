@@ -384,7 +384,7 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
           <div className="admin-section-head">
             <div>
               <h2>Client inquiries</h2>
-              <p className="admin-help">Quote requests are stored in Firebase. Update their status as you work through your leads.</p>
+              <p className="admin-help">Quote requests are stored in Supabase. Update their status as you work through your leads.</p>
             </div>
           </div>
           {inquiries.length === 0 ? (
