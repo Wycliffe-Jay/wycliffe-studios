@@ -1,4 +1,4 @@
-import { readCollection, readSection } from './firebase';
+import { readCollection, readSection } from './supabase';
 
 export type EditableContent = {
   heroEyebrow: string;
