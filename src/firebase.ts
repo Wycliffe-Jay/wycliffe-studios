@@ -22,7 +22,7 @@ import {
 } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCztg9A-1e0obIBAQZvBJSLG1qLEAYivk',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCztg9aG-1e0obIBAQZvBJSLG1qLEAYivk',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'wycliffe-studios.firebaseapp.com',
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'wycliffe-studios',
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'wycliffe-studios.firebasestorage.app',
