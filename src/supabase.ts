@@ -22,11 +22,22 @@ export async function signInAdmin(email: string, password: string) {
 export const signOutAdmin = () => supabase.auth.signOut();
 
 export function watchAuth(callback: (user: User | null) => void) {
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session?.user ?? null);
+  let active = true;
+
+  // Resolve the existing session explicitly so the admin page does not
+  // depend on the auth event arriving before the initial render.
+  void supabase.auth.getSession().then(({ data }) => {
+    if (active) callback(data.session?.user ?? null);
   });
 
-  return () => data.subscription.unsubscribe();
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (active) callback(session?.user ?? null);
+  });
+
+  return () => {
+    active = false;
+    data.subscription.unsubscribe();
+  };
 }
 
 export async function readSection(id: string): Promise<Record<string, any> | null> {
