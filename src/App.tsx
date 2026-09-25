@@ -1,382 +1,71 @@
-import { useEffect, useState } from 'react';
-import AdminDashboard from './AdminDashboard';
-import { loadSiteContent, type EditableContent } from './siteContent';
-import { createClientInquiry } from './supabase';
-import {
-  ArrowUpRight,
-  BriefcaseBusiness,
-  Check,
-  Instagram,
-  Mail,
-  Menu,
-  MessageCircle,
-  Palette,
-  PenTool,
-  Phone,
-  Send,
-  Sparkles,
-  X,
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, CircleDot, ExternalLink, Mail, Menu, MessageCircle, Send, Sparkles, X } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import Admin from './Admin';
+import './index.css';
 
-const serviceIcons = [PenTool, Palette, Sparkles, BriefcaseBusiness];
+const supabase = createClient('https://shzyzqwjyyutvldyzue.supabase.co', 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
+type Row = Record<string, any>;
+const setting = (m: Record<string, string>, keys: string[], fallback = '') => { for (const k of keys) if (m[k] !== undefined && m[k] !== null && m[k] !== '') return m[k]; return fallback; };
+const settingKey = (m: Record<string, Row>, keys: string[]) => keys.find(k => m[k]) || keys[0];
+const defaults = {
+  brand_name:'Wycliffe Studios',contact_email:'radacliffemensah@gmail.com',whatsapp_number:'0591911002',footer_copyright:'© 2026 Wycliffe Mensah',
+  nav_work:'work',nav_services:'services',nav_process:'process',nav_about:'about',nav_cta:'Get a quote',
+  hero_eyebrow:'Available for selected projects',hero_headline_line1:'Design that makes',hero_headline_line2:'businesses seen.',hero_subheadline:'I create sharp, memorable graphics for Ghanaian traders and growing businesses — designed to attract attention and turn interest into enquiries.',hero_primary_cta:'Get a free quote',hero_secondary_cta:'See my work',hero_trust_1:'Clear communication',hero_trust_2:'Business-focused',hero_trust_3:'Fast project brief',
+  hero_card_label:'WYCLIFFE / 01',hero_card_location:'GHANA',hero_card_image_label:'VISUAL IDENTITY',hero_card_headline:'Visual identity.',hero_service_1:'POSTERS',hero_service_2:'LOGOS',hero_service_3:'BANNERS',
+  proof_label:'Client experience',proof_heading:'Designed to earn attention.',marquee_text:'POSTERS ✦ LOGOS ✦ BANNERS ✦ BRAND VISUALS ✦ SOCIAL GRAPHICS',
+  work_label:'01 / Selected work',work_heading:'Ideas, made visible.',work_description:'Concept-led visuals built to stop the scroll, explain the offer and make a business look ready for its next customer.',
+  services_label:'02 / What I do',services_heading:'Design with a purpose.',services_description:'No decoration for decoration’s sake. Every visual is built around clarity, attention and the action you want customers to take.',
+  about_label:'03 / Why Wycliffe',about_heading:'Good design should feel like an advantage.',process_label:'04 / The process',process_heading:'Simple from start to finish.',process_description:'A focused process keeps projects moving without burying you in design jargon.',
+  testimonials_label:'05 / Client words',testimonials_heading:'What clients say.',quote_label:'06 / Start a project',quote_heading:'Tell me what you need. I’ll take it from there.',quote_description:'Give me the basics and I’ll have the right information to reply with a clear next step.',
+  faq_label:'07 / FAQ',faq_heading:'Before we start.',cta_label:'08 / Have a project?',cta_heading:'Let’s make your next idea visible.',cta_description:'Ready when you are. Start with a quick project request.'
+};
+const aliases: Record<string,string[]> = {
+  brand_name:['brand_name'],contact_email:['contact_email'],whatsapp_number:['whatsapp_number'],footer_copyright:['footer_copyright'],nav_work:['nav_work'],nav_services:['nav_services'],nav_process:['nav_process'],nav_about:['nav_about'],nav_cta:['nav_cta'],
+  hero_eyebrow:['hero_eyebrow','eyebrow'],hero_headline_line1:['hero_headline_line1','headline_line1'],hero_headline_line2:['hero_headline_line2','headline_line2'],hero_subheadline:['hero_subheadline','subheadline'],hero_primary_cta:['hero_primary_cta','primary_cta_text'],hero_secondary_cta:['hero_secondary_cta','secondary_cta_text'],hero_trust_1:['hero_trust_1','trust_item_1'],hero_trust_2:['hero_trust_2','trust_item_2'],hero_trust_3:['hero_trust_3','trust_item_3'],hero_card_label:['hero_card_label'],hero_card_location:['hero_card_location'],hero_card_image_label:['hero_card_image_label'],hero_card_headline:['hero_card_headline'],hero_service_1:['hero_service_1'],hero_service_2:['hero_service_2'],hero_service_3:['hero_service_3'],
+  proof_label:['proof_label','social_proof_label'],proof_heading:['proof_heading','social_proof_heading'],marquee_text:['marquee_text'],work_label:['work_label','portfolio_label'],work_heading:['work_heading','portfolio_heading'],work_description:['work_description','portfolio_description'],services_label:['services_label'],services_heading:['services_heading'],services_description:['services_description'],about_label:['about_label'],about_heading:['about_heading'],process_label:['process_label'],process_heading:['process_heading'],process_description:['process_description'],testimonials_label:['testimonials_label'],testimonials_heading:['testimonials_heading'],quote_label:['quote_label'],quote_heading:['quote_heading'],quote_description:['quote_description'],faq_label:['faq_label'],faq_heading:['faq_heading'],cta_label:['cta_label'],cta_heading:['cta_heading'],cta_description:['cta_description']
+};
+function get(m: Record<string,string>,k:keyof typeof defaults){return setting(m,aliases[k]||[k],defaults[k]);}
+function attr(table:string,id:string,field:string){return {'data-cms-table':table,'data-cms-id':id,'data-cms-field':field};}
+function settingAttr(m:Record<string,Row>,k:keyof typeof defaults){const key=settingKey(m,aliases[k]||[k]);return {'data-cms-table':'site_settings','data-cms-id':m[key]?.id||key,'data-cms-key':key,'data-cms-field':'value'};}
+function Text({children,table,id,field,settingsKey,settingsMap,tag='span'}:{children:any;table?:string;id?:string;field?:string;settingsKey?:keyof typeof defaults;settingsMap?:Record<string,Row>;tag?:any}){const p=table?attr(table,id!,field!):settingsKey&&settingsMap?settingAttr(settingsMap,settingsKey):{};const C=tag;return <C {...p}>{children}</C>;}
+function safeImageUrl(value:unknown){return typeof value==='string'&&value.trim()?value.trim():null;}
+function Placeholder({label}:{label:string}){return <div className='image-placeholder' role='img' aria-label={label}><div className='placeholder-icon'><svg viewBox='0 0 24 24' aria-hidden='true'><rect x='3' y='4' width='18' height='16' rx='2' fill='none' stroke='currentColor' strokeWidth='1.6'/><circle cx='8.5' cy='9' r='1.5' fill='currentColor'/><path d='m5 17 4.5-4 3 2.5 2.2-2 4.3 3.5' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round'/></svg></div><span>{label}</span></div>;}
 
-function App() {
-  const [admin, setAdmin] = useState(window.location.hash === '#admin');
-  const [content, setContent] = useState<EditableContent | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activeProject, setActiveProject] = useState<number | null>(null);
-  const [quote, setQuote] = useState({
-    name: '',
-    business: '',
-    email: '',
-    phone: '',
-    service: 'Graphic Design',
-    budget: 'Not sure yet',
-    details: '',
-  });
-
-  useEffect(() => {
-    const onHash = () => setAdmin(window.location.hash === '#admin');
-    window.addEventListener('hashchange', onHash);
-    void loadSiteContent().then(setContent).catch(() => setContent(null));
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
-  useEffect(() => {
-    if (content?.services[0]) {
-      setQuote(q => ({ ...q, service: q.service || content.services[0].title }));
-    }
-  }, [content]);
-
-  const goTo = (id: string) => {
-    setMenuOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const submitQuote = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!content) return;
-
-    const whatsapp = content.whatsapp.replace(/\D/g, '');
-    const message = [
-      'Hello Wycliffe Studios, I would like to request a quote.',
-      '',
-      'Name: ' + quote.name,
-      'Business/Brand: ' + quote.business,
-      'Email: ' + quote.email,
-      'Phone: ' + quote.phone,
-      'Service: ' + quote.service,
-      'Budget: ' + quote.budget,
-      'Project details: ' + quote.details,
-    ].join('\n');
-
-    try {
-      await createClientInquiry({
-        name: quote.name,
-        business: quote.business,
-        email: quote.email,
-        phone: quote.phone,
-        service: quote.service,
-        budget: quote.budget,
-        projectDetails: quote.details,
-      });
-    } catch (error) {
-      console.error('Could not save inquiry', error);
-    }
-
-    window.open('https://wa.me/' + whatsapp + '?text=' + encodeURIComponent(message), '_blank');
-  };
-
-  if (admin) {
-    return <AdminDashboard onBack={() => { window.location.hash = ''; window.location.reload(); }} />;
-  }
-
-  if (!content) {
-    return (
-      <div className="site">
-        <div className="admin-loading">Loading Wycliffe Studios…</div>
-      </div>
-    );
-  }
-
-  const phoneHref = 'tel:+233' + content.phone.replace(/^0/, '').replace(/^\+233/, '');
-  const whatsappHref = 'https://wa.me/' + content.whatsapp.replace(/\D/g, '');
-
-  return (
-    <div className="site">
-      <header className="nav">
-        <button className="brand" onClick={() => goTo('home')} aria-label="Wycliffe Studios home">
-          <span className="brand-mark">W</span>
-          <span>
-            <strong>Wycliffe</strong>
-            <small>STUDIOS</small>
-          </span>
-        </button>
-
-        <nav className={menuOpen ? 'nav-links open' : 'nav-links'}>
-          <button onClick={() => goTo('work')}>Work</button>
-          <button onClick={() => goTo('services')}>Services</button>
-          <button onClick={() => goTo('about')}>About</button>
-          <button className="nav-cta" onClick={() => goTo('contact')}>
-            Start a project <ArrowUpRight size={16} />
-          </button>
-        </nav>
-
-        <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
-          {menuOpen ? <X /> : <Menu />}
-        </button>
-      </header>
-
-      <main>
-        <section id="home" className="hero">
-          <div className="hero-copy">
-            <div className="eyebrow"><span></span>{content.heroEyebrow}</div>
-            <h1>
-              {content.heroTitle}
-              <br />
-              <em>{content.heroEmphasis}</em> stand out.
-            </h1>
-            <p>{content.heroDescription}</p>
-            <div className="hero-actions">
-              <button className="primary" onClick={() => goTo('work')}>
-                Explore my work <ArrowUpRight size={18} />
-              </button>
-              <button className="text-button" onClick={() => goTo('contact')}>
-                Let's work together <span>→</span>
-              </button>
-            </div>
-            <div className="hero-proof">
-              <span><Check size={15} /> Creative & intentional</span>
-              <span><Check size={15} /> Built for your goal</span>
-            </div>
-          </div>
-
-          <div className="hero-art" aria-label="Abstract Wycliffe Studios design composition">
-            <div className="orb orb-one"></div>
-            <div className="orb orb-two"></div>
-            <div className="art-card art-back">
-              <span>VISUAL</span>
-              <strong>IMPACT</strong>
-            </div>
-            <div className="art-card art-front">
-              <div className="mini-logo">W</div>
-              <p>WYCLIFFE<br /><b>STUDIOS</b></p>
-              <span>CREATE • REFINE • DELIVER</span>
-            </div>
-            <div className="floating-card">
-              <span>01</span>
-              <b>YOUR<br />IDEA</b>
-              <ArrowUpRight size={18} />
-            </div>
-          </div>
-        </section>
-
-        <section className="statement">
-          <p>{content.statementLabel}</p>
-          <h2>{content.statement}</h2>
-        </section>
-
-        <section id="work" className="section work-section">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow"><span></span> SELECTED WORK</div>
-              <h2>A selection of<br /><em>what I create.</em></h2>
-            </div>
-            <p>Every project starts with a purpose. Browse the portfolio and imagine what we could build for your brand.</p>
-          </div>
-
-          <div className="projects">
-            {content.projects.map((project, i) => (
-              <button
-                className="project"
-                key={project.id ?? project.title + i}
-                onClick={() => setActiveProject(i)}
-                aria-label={'View ' + project.title}
-              >
-                <div className="project-visual">
-                  {project.imageUrl ? (
-                    <img
-                      className="project-image"
-                      src={project.imageUrl}
-                      alt={project.title}
-                      onError={e => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div className="image-placeholder"><ImagePlaceholder /></div>
-                  )}
-                  <span className="project-number">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="project-image-label">{project.tag}</span>
-                  <ArrowUpRight className="project-arrow" size={22} />
-                </div>
-                <div className="project-meta">
-                  <div>
-                    <strong>{project.title}</strong>
-                    <span>{project.type}</span>
-                  </div>
-                  <ArrowUpRight size={18} />
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section id="services" className="services">
-          <div className="section-heading compact">
-            <div>
-              <div className="eyebrow light"><span></span> WHAT I DO</div>
-              <h2>Design services<br /><em>built around you.</em></h2>
-            </div>
-          </div>
-          <div className="service-grid">
-            {content.services.map((service, i) => {
-              const Icon = serviceIcons[i % serviceIcons.length];
-              return (
-                <div className="service" key={service.id ?? service.title + i}>
-                  <div className="service-top"><span>0{i + 1}</span><Icon size={23} /></div>
-                  <h3>{service.title}</h3>
-                  <p>{service.text}</p>
-                  <span className="service-line"></span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section id="pricing" className="pricing section">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow"><span></span> PACKAGES & PRICING</div>
-              <h2>Clear options.<br /><em>Custom quotes.</em></h2>
-            </div>
-            <p>Choose a starting point below. Final pricing is tailored to the scope, number of designs, revisions, and turnaround time.</p>
-          </div>
-          <div className="pricing-grid">
-            {content.prices.map((price, i) => (
-              <article className={'price-card' + (i === 1 ? ' featured' : '')} key={price.id ?? price.title + i}>
-                <span className="price-kicker">{String(i + 1).padStart(2, '0')}</span>
-                <h3>{price.title}</h3>
-                <p>{price.description}</p>
-                <strong>{price.price}</strong>
-                <button className="text-button" onClick={() => goTo('contact')}>Request a quote →</button>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="about" className="about section">
-          <div className="about-mark">W</div>
-          <div className="about-copy">
-            <div className="eyebrow"><span></span> ABOUT WYCLIFFE STUDIOS</div>
-            <h2>{content.aboutTitle}</h2>
-            <p>{content.aboutParagraph1}</p>
-            <p>{content.aboutParagraph2}</p>
-            <div className="about-list">
-              <span>01 — Understand</span>
-              <span>02 — Create</span>
-              <span>03 — Refine</span>
-              <span>04 — Deliver</span>
-            </div>
-            <div className="client-types">
-              {content.clientTypes.map(item => <span key={item}>{item}</span>)}
-            </div>
-          </div>
-        </section>
-
-        <section id="contact" className="contact">
-          <div className="contact-inner">
-            <div className="eyebrow light"><span></span> HAVE A PROJECT IN MIND?</div>
-            <h2>{content.contactTitle}</h2>
-            <p>{content.contactDescription}</p>
-
-            <form className="quote-form" onSubmit={submitQuote}>
-              <div className="form-grid">
-                <label>Your name<input required value={quote.name} onChange={e => setQuote({ ...quote, name: e.target.value })} placeholder="Your name" /></label>
-                <label>Business / brand<input value={quote.business} onChange={e => setQuote({ ...quote, business: e.target.value })} placeholder="Business or brand name" /></label>
-                <label>Email<input required type="email" value={quote.email} onChange={e => setQuote({ ...quote, email: e.target.value })} placeholder="you@example.com" /></label>
-                <label>Phone<input required value={quote.phone} onChange={e => setQuote({ ...quote, phone: e.target.value })} placeholder="Phone / WhatsApp number" /></label>
-                <label>
-                  What do you need?
-                  <select value={quote.service} onChange={e => setQuote({ ...quote, service: e.target.value })}>
-                    {content.services.map(service => <option key={service.id ?? service.title}>{service.title}</option>)}
-                    <option>Custom Design</option>
-                  </select>
-                </label>
-                <label>
-                  Budget
-                  <select value={quote.budget} onChange={e => setQuote({ ...quote, budget: e.target.value })}>
-                    <option>Not sure yet</option>
-                    <option>Under GH₵200</option>
-                    <option>GH₵200 – GH₵500</option>
-                    <option>GH₵500 – GH₵1,000</option>
-                    <option>GH₵1,000+</option>
-                  </select>
-                </label>
-              </div>
-              <label>Tell me about the project<textarea required rows={5} value={quote.details} onChange={e => setQuote({ ...quote, details: e.target.value })} placeholder="What do you want designed? Include any deadline, size, text, or other important details." /></label>
-              <button className="contact-button form-submit" type="submit">Request a quote on WhatsApp <Send size={18} /></button>
-            </form>
-
-            <div className="contact-actions">
-              <a className="contact-button" href={'mailto:' + content.email}>Email me <Mail size={18} /></a>
-              <a className="contact-button secondary-contact" href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp <MessageCircle size={18} /></a>
-              <a className="contact-button secondary-contact" href={phoneHref}>Call <Phone size={18} /></a>
-            </div>
-            <div className="contact-details">
-              <a href={'mailto:' + content.email}>{content.email}</a>
-              <a href={phoneHref}>{content.phone}</a>
-            </div>
-          </div>
-          <div className="contact-decoration">W<span>.</span></div>
-        </section>
-      </main>
-
-      <footer>
-        <div className="footer-brand">
-          <span className="brand-mark">W</span>
-          <div><strong>Wycliffe Studios</strong><small>GRAPHIC DESIGN</small></div>
-        </div>
-        <p>© 2026 Wycliffe Studios. Crafted with purpose.</p>
-        <div className="socials">
-          <a href={content.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={19} /></a>
-          <a href={'mailto:' + content.email} aria-label="Email"><Mail size={19} /></a>
-          <a href={whatsappHref} target="_blank" rel="noreferrer" aria-label="WhatsApp"><MessageCircle size={19} /></a>
-          <button className="admin-link" onClick={() => { window.location.hash = 'admin'; }} aria-label="Open admin dashboard">Admin</button>
-        </div>
-      </footer>
-
-      {activeProject !== null && content.projects[activeProject] && (
-        <div className="modal-backdrop" onClick={() => setActiveProject(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setActiveProject(null)}><X /></button>
-            <div className="modal-visual">
-              {content.projects[activeProject].imageUrl ? (
-                <img
-                  className="modal-image"
-                  src={content.projects[activeProject].imageUrl}
-                  alt={content.projects[activeProject].title}
-                  onError={e => { e.currentTarget.style.display = 'none'; }}
-                />
-              ) : (
-                <div className="image-placeholder modal-placeholder"><ImagePlaceholder /></div>
-              )}
-            </div>
-            <div className="modal-content">
-              <div className="eyebrow"><span></span> PROJECT</div>
-              <h3>{content.projects[activeProject].title}</h3>
-              <p>{content.projects[activeProject].description}</p>
-              <button className="primary" onClick={() => { setActiveProject(null); goTo('contact'); }}>
-                Create something similar <ArrowUpRight size={17} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+function App(){
+  if(window.location.hash==='#admin')return <Admin/>;
+  const [settings,setSettings]=useState<Record<string,string>>({}),[hero,setHero]=useState<Row|null>(null),[portfolio,setPortfolio]=useState<Row[]>([]),[services,setServices]=useState<Row[]>([]),[testimonials,setTestimonials]=useState<Row[]>([]),[about,setAbout]=useState<Row|null>(null),[process,setProcess]=useState<Row[]>([]),[faqs,setFaqs]=useState<Row[]>([]);
+  const [loading,setLoading]=useState(true),[loadErrors,setLoadErrors]=useState<string[]>([]),[menuOpen,setMenuOpen]=useState(false),[openFaq,setOpenFaq]=useState<number|null>(null),[cursor,setCursor]=useState({x:-100,y:-100}),[quoteSent,setQuoteSent]=useState(false);
+  useEffect(()=>{let cancelled=false;const read=async <T,>(label:string,request:PromiseLike<{data:T|null;error:any}>,fallback:T)=>{try{const r=await request;if(r.error){const msg='[Wycliffe Studios] '+label+' fetch failed: '+r.error.message;console.error(msg,r.error);if(!cancelled)setLoadErrors(x=>[...x,msg]);return fallback;}return r.data??fallback;}catch(e){const msg='[Wycliffe Studios] '+label+' fetch threw: '+(e instanceof Error?e.message:String(e));console.error(msg,e);if(!cancelled)setLoadErrors(x=>[...x,msg]);return fallback;}};
+    (async()=>{const [st,h,p,s,t,a,pr,f]=await Promise.all([
+      read('site_settings',supabase.from('site_settings').select('*'),[] as Row[]),read('hero_content',supabase.from('hero_content').select('*').limit(1).maybeSingle(),null as Row|null),
+      read('portfolio_items',supabase.from('portfolio_items').select('*').order('sort_order'),[] as Row[]),read('services',supabase.from('services').select('*').order('sort_order'),[] as Row[]),
+      read('testimonials',supabase.from('testimonials').select('*').order('sort_order'),[] as Row[]),read('about_content',supabase.from('about_content').select('*').limit(1).maybeSingle(),null as Row|null),
+      read('process_items',supabase.from('process_items').select('*').order('sort_order'),[] as Row[]),read('faq_items',supabase.from('faq_items').select('*').order('sort_order'),[] as Row[])
+    ]);if(cancelled)return;const sm:Record<string,string>={};(st as Row[]).forEach(r=>sm[r.key]=String(r.value??''));setSettings(sm);setHero(h as Row|null);setPortfolio(p as Row[]);setServices(s as Row[]);setTestimonials(t as Row[]);setAbout(a as Row|null);setProcess(pr as Row[]);setFaqs(f as Row[]);setLoading(false);})();return()=>{cancelled=true;};},[]);
+  useEffect(()=>{const on=(e:MouseEvent)=>setCursor({x:e.clientX,y:e.clientY});window.addEventListener('mousemove',on);const o=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('visible')),{threshold:.12});document.querySelectorAll('.reveal').forEach(e=>o.observe(e));return()=>{window.removeEventListener('mousemove',on);o.disconnect();}},[loading]);
+  const settingsMap=useMemo(()=>Object.fromEntries(Object.entries(settings).map(([k,v])=>[k,{id:k,value:v}])),[settings]);
+  const scrollTo=(id:string)=>{document.getElementById(id)?.scrollIntoView({behavior:'smooth'});setMenuOpen(false);};
+  const submitQuote=(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();const d=new FormData(e.currentTarget);const subject=encodeURIComponent('New Design Project Quote Request');const body=encodeURIComponent(`Name: ${d.get('name')}\nBusiness: ${d.get('business')}\nService: ${d.get('service')}\nBudget: ${d.get('budget')}\nDeadline: ${d.get('deadline')}\nContact: ${d.get('contact')}\nProject details: ${d.get('details')}`);window.location.href=`mailto:${get(settings,'contact_email')}?subject=${subject}&body=${body}`;setQuoteSent(true);};
+  if(loading)return <div className='site site-loading-shell'><div className='grain'/><div className='nav-skeleton'/><main className='loading-layout'><div className='loading-copy'><span/><span/><span/><div/><div/></div><div className='loading-card'><div/></div></main></div>;
+  const brand=get(settings,'brand_name'),email=get(settings,'contact_email'),wa=get(settings,'whatsapp_number').replace(/\D/g,''),heroImage=safeImageUrl(hero?.hero_card_image_url);
+  return <div className='site' style={{'--cursor-x':`${cursor.x}px`,'--cursor-y':`${cursor.y}px`} as React.CSSProperties}><div className='grain'/><div className='cursor'/>{loadErrors.length>0&&<div className='data-warning' role='status'>Some website data could not be loaded. The rest of the site is still available.</div>}
+    <nav className='nav'><button className='brand' onClick={()=>scrollTo('top')}><span className='brand-mark'>W</span><Text settingsKey='brand_name' settingsMap={settingsMap}>{brand}</Text></button><div className={`nav-links ${menuOpen?'open':''}`}>{(['work','services','process','about'] as const).map(k=><button key={k} onClick={()=>scrollTo(k)}><Text settingsKey={('nav_'+k) as keyof typeof defaults} settingsMap={settingsMap}>{get(settings,('nav_'+k) as keyof typeof defaults)}</Text></button>)}<button className='nav-cta' onClick={()=>scrollTo('quote')}><Text settingsKey='nav_cta' settingsMap={settingsMap}>{get(settings,'nav_cta')}</Text><ArrowUpRight size={16}/></button></div><button className='menu' onClick={()=>setMenuOpen(v=>!v)} aria-label='Toggle menu'>{menuOpen?<X/>:<Menu/>}</button></nav>
+    <main id='top'>
+      <section className='hero'><div className='hero-glow'/><div className='hero-copy reveal'><div className='eyebrow'><span className='pulse'/> <Text settingsKey='hero_eyebrow' settingsMap={settingsMap}>{get(settings,'hero_eyebrow')}</Text></div><h1><Text settingsKey='hero_headline_line1' settingsMap={settingsMap} tag='span'>{get(settings,'hero_headline_line1')}</Text><br/><Text settingsKey='hero_headline_line2' settingsMap={settingsMap} tag='span'>{get(settings,'hero_headline_line2')}</Text></h1><p><Text settingsKey='hero_subheadline' settingsMap={settingsMap}>{get(settings,'hero_subheadline')}</Text></p><div className='hero-actions'><button className='primary' onClick={()=>scrollTo('quote')}><Text settingsKey='hero_primary_cta' settingsMap={settingsMap}>{get(settings,'hero_primary_cta')}</Text><ArrowUpRight size={18}/></button><button className='text-btn' onClick={()=>scrollTo('work')}><Text settingsKey='hero_secondary_cta' settingsMap={settingsMap}>{get(settings,'hero_secondary_cta')}</Text><ArrowDownRight size={18}/></button></div><div className='trust-row'>{([1,2,3] as const).map(n=><span key={n}><CheckCircle2 size={15}/><Text settingsKey={`hero_trust_${n}` as keyof typeof defaults} settingsMap={settingsMap}>{get(settings,`hero_trust_${n}` as keyof typeof defaults)}</Text></span>)}</div></div>
+        <div className='hero-card reveal'><div className='card-top'><Text settingsKey='hero_card_label' settingsMap={settingsMap}>{get(settings,'hero_card_label')}</Text><Text settingsKey='hero_card_location' settingsMap={settingsMap}>{get(settings,'hero_card_location')}</Text></div><div className='orb'>{heroImage?<img data-cms-table='hero_content' data-cms-id={hero?.id||'hero'} data-cms-field='hero_card_image_url' src={heroImage} alt='Hero portrait' onError={e=>{e.currentTarget.style.display='none';e.currentTarget.parentElement?.classList.add('image-failed');}}/>:<Placeholder label='Hero image'/>}<span className='photo-placeholder-label'><Text settingsKey='hero_card_image_label' settingsMap={settingsMap}>{get(settings,'hero_card_image_label')}</Text></span></div><div className='hero-card-bottom'><strong><Text settingsKey='hero_card_headline' settingsMap={settingsMap}>{get(settings,'hero_card_headline')}</Text></strong><span>{[1,2,3].map(n=><Text key={n} settingsKey={`hero_service_${n}` as keyof typeof defaults} settingsMap={settingsMap} tag='span'>{get(settings,`hero_service_${n}` as keyof typeof defaults)}</Text>)}</span></div></div><div className='scroll-hint'><span>Scroll to explore</span><span className='line'/></div>
+      </section>
+      <section className='social-proof reveal'><div className='proof-label'><Text settingsKey='proof_label' settingsMap={settingsMap} tag='span'>{get(settings,'proof_label')}</Text><strong><Text settingsKey='proof_heading' settingsMap={settingsMap}>{get(settings,'proof_heading')}</Text></strong></div><div className='proof-ticker'>{testimonials.slice(0,3).map(t=><div key={t.id}><span className='stars'>★★★★★</span><p {...attr('testimonials',t.id,'quote')}>“{t.quote||'Client testimonial'}”</p><small><span {...attr('testimonials',t.id,'client_name')}>{t.client_name||'Client'}</span> · <span {...attr('testimonials',t.id,'role')}>{t.role||'Client'}</span></small></div>)}</div></section>
+      <section className='marquee'><div><Text settingsKey='marquee_text' settingsMap={settingsMap}>{get(settings,'marquee_text')}</Text></div></section>
+      <section className='section work' id='work'><div className='section-head reveal'><div><Text settingsKey='work_label' settingsMap={settingsMap} tag='span'>{get(settings,'work_label')}</Text><h2><Text settingsKey='work_heading' settingsMap={settingsMap}>{get(settings,'work_heading')}</Text></h2></div><p><Text settingsKey='work_description' settingsMap={settingsMap}>{get(settings,'work_description')}</Text></p></div><div className='work-grid' data-cms-list='portfolio'>{portfolio.map((x,i)=>{const image=safeImageUrl(x.image_url);return <article className='work-card reveal' key={x.id}><div className='image-wrap'>{image?<img {...attr('portfolio_items',x.id,'image_url')} src={image} alt={x.title||'Portfolio item'} onError={e=>{e.currentTarget.style.display='none';e.currentTarget.parentElement?.classList.add('image-failed');}}/>:<Placeholder label='Portfolio image'/>}<span className='number'>0{i+1}</span></div><div className='work-meta'><div><h3 {...attr('portfolio_items',x.id,'title')}>{x.title||'New portfolio item'}</h3><span {...attr('portfolio_items',x.id,'category')}>{x.category||'Category'}</span></div>{image?<a href={image} target='_blank' rel='noreferrer' aria-label='Open portfolio image'><ExternalLink size={17}/></a>:<span aria-hidden='true'/>}</div></article>;})}</div><p className='sample-note'>Portfolio imagery is managed from the visual editor.</p></section>
+      <section className='section services' id='services'><div className='section-head reveal'><div><Text settingsKey='services_label' settingsMap={settingsMap} tag='span'>{get(settings,'services_label')}</Text><h2><Text settingsKey='services_heading' settingsMap={settingsMap}>{get(settings,'services_heading')}</Text></h2></div><p><Text settingsKey='services_description' settingsMap={settingsMap}>{get(settings,'services_description')}</Text></p></div><div className='service-grid'>{services.map(x=><article className='service-card reveal' key={x.id}><span>{String(x.sort_order).padStart(2,'0')}</span><Sparkles size={22}/><h3 {...attr('services',x.id,'title')}>{x.title||'Service'}</h3><p {...attr('services',x.id,'description')}>{x.description||''}</p><ArrowUpRight className='service-arrow' size={22}/></article>)}</div></section>
+      <section className='section split' id='about'><div className='statement reveal'><Text settingsKey='about_label' settingsMap={settingsMap} tag='span'>{get(settings,'about_label')}</Text><h2><Text settingsKey='about_heading' settingsMap={settingsMap}>{get(settings,'about_heading')}</Text></h2></div>{about&&<div className='about-copy reveal'><p className='big-copy' {...attr('about_content',about.id,'paragraph')}>{about.paragraph||''}</p><div className='stats'>{[1,2,3].map(n=><div key={n}><strong>{String(n).padStart(2,'0')}</strong><span {...attr('about_content',about.id,`stat_${n}`)}>{about[`stat_${n}`]||''}</span></div>)}</div></div>}</section>
+      <section className='section process' id='process'><div className='section-head reveal'><div><Text settingsKey='process_label' settingsMap={settingsMap} tag='span'>{get(settings,'process_label')}</Text><h2><Text settingsKey='process_heading' settingsMap={settingsMap}>{get(settings,'process_heading')}</Text></h2></div><p><Text settingsKey='process_description' settingsMap={settingsMap}>{get(settings,'process_description')}</Text></p></div><div className='process-list'>{process.map(x=><div className='process-row reveal' key={x.id}><span {...attr('process_items',x.id,'number')}>{x.number||'00'}</span><h3 {...attr('process_items',x.id,'title')}>{x.title||'Process step'}</h3><p {...attr('process_items',x.id,'description')}>{x.description||''}</p><CircleDot size={17}/></div>)}</div></section>
+      <section className='section testimonials'><div className='section-head reveal'><div><Text settingsKey='testimonials_label' settingsMap={settingsMap} tag='span'>{get(settings,'testimonials_label')}</Text><h2><Text settingsKey='testimonials_heading' settingsMap={settingsMap}>{get(settings,'testimonials_heading')}</Text></h2></div><div className='carousel-controls'><button><ArrowLeft size={18}/></button><button><ArrowRight size={18}/></button></div></div><div className='testimonial-track'>{testimonials.map(x=>{const image=safeImageUrl(x.photo_url);return <article className='quote reveal' key={x.id}><div className='quote-top'><span className='quote-mark'>“</span><span className='stars'>★★★★★</span></div>{image?<img className='testimonial-photo' {...attr('testimonials',x.id,'photo_url')} src={image} alt={x.client_name||'Client'} onError={e=>{e.currentTarget.style.display='none';e.currentTarget.parentElement?.classList.add('image-failed');}}/>:<Placeholder label='Client photo'/>}<p {...attr('testimonials',x.id,'quote')}>{x.quote||'Client testimonial'}</p><div className='quote-person'><strong {...attr('testimonials',x.id,'client_name')}>{x.client_name||'Client'}</strong><span {...attr('testimonials',x.id,'role')}>{x.role||'Client'}</span></div></article>;})}</div></section>
+      <section className='quote-section' id='quote'><div className='quote-intro reveal'><Text settingsKey='quote_label' settingsMap={settingsMap} tag='span'>{get(settings,'quote_label')}</Text><h2><Text settingsKey='quote_heading' settingsMap={settingsMap}>{get(settings,'quote_heading')}</Text></h2><p><Text settingsKey='quote_description' settingsMap={settingsMap}>{get(settings,'quote_description')}</Text></p><div className='mini-proof'><CheckCircle2 size={17}/> No complicated brief required</div><div className='mini-proof'><CheckCircle2 size={17}/> Tell me your deadline upfront</div><div className='mini-proof'><CheckCircle2 size={17}/> Final files prepared for use</div></div><form className='quote-form reveal' onSubmit={submitQuote}>{quoteSent&&<div className='sent'><CheckCircle2 size={18}/> Your email draft is ready.</div>}<div className='form-grid'><label>Name<input required name='name' placeholder='Your name'/></label><label>Business<input name='business' placeholder='Business name'/></label></div><div className='form-grid'><label>What do you need?<select required name='service'><option value=''>Choose a service</option>{services.map(s=><option key={s.id}>{s.title}</option>)}<option>Other</option></select></label><label>Budget range<select name='budget'><option value=''>Select budget</option><option>Under GHS 200</option><option>GHS 200–500</option><option>GHS 500–1,000</option><option>GHS 1,000+</option><option>Not sure yet</option></select></label></div><div className='form-grid'><label>Deadline<input name='deadline' placeholder='e.g. Friday'/></label><label>Email or phone<input required name='contact' placeholder='How should I reach you?'/></label></div><label>Tell me about the project<textarea required name='details' rows={4} placeholder='What are you promoting or building? Include any important text, size or platform if you know it.'/></label><button className='primary form-submit'>Request my quote <Send size={17}/></button><small>Submitting opens your email app. Nothing is stored on this website.</small></form></section>
+      <section className='section faq'><div className='section-head reveal'><div><Text settingsKey='faq_label' settingsMap={settingsMap} tag='span'>{get(settings,'faq_label')}</Text><h2><Text settingsKey='faq_heading' settingsMap={settingsMap}>{get(settings,'faq_heading')}</Text></h2></div></div><div className='faq-list'>{faqs.map((x,i)=><button className={`faq-row reveal ${openFaq===i?'active':''}`} key={x.id} onClick={()=>setOpenFaq(openFaq===i?null:i)}><div><span>{String(i+1).padStart(2,'0')}</span><strong {...attr('faq_items',x.id,'question')}>{x.question||'Question'}</strong></div><ChevronDown size={20}/><p {...attr('faq_items',x.id,'answer')}>{x.answer||''}</p></button>)}</div></section>
+      <section className='cta' id='contact'><div className='cta-glow'/><Text settingsKey='cta_label' settingsMap={settingsMap} tag='span'>{get(settings,'cta_label')}</Text><h2><Text settingsKey='cta_heading' settingsMap={settingsMap}>{get(settings,'cta_heading')}</Text></h2><p><Text settingsKey='cta_description' settingsMap={settingsMap}>{get(settings,'cta_description')}</Text></p><div className='cta-actions'><button className='primary' onClick={()=>scrollTo('quote')}>Get a free quote <ArrowUpRight size={18}/></button><a className='secondary' href={`mailto:${email}?subject=Design%20Project%20Inquiry`}>Email Wycliffe <Mail size={18}/></a><a className='secondary' href={`https://wa.me/233${wa.replace(/^0/,'')}`} target='_blank' rel='noreferrer'>WhatsApp <MessageCircle size={18}/></a></div></section>
+    </main><footer><div className='brand'><span className='brand-mark'>W</span><Text settingsKey='brand_name' settingsMap={settingsMap}>{brand}</Text></div><span {...settingAttr(settingsMap,'footer_copyright')}>{get(settings,'footer_copyright')}</span><a href={`mailto:${email}`}><Mail size={16}/></a></footer>
+  </div>;
 }
-
-function ImagePlaceholder() {
-  return <span className="image-placeholder-inner">Upload a portfolio image in Admin</span>;
-}
-
 export default App;
