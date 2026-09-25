@@ -15,6 +15,53 @@ const nav: [Section, any][] = [
 ];
 
 function Admin() {
+  const [authReady, setAuthReady] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => { if (mounted) { setSession(data.session); setAuthReady(true); } });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthReady(true);
+    });
+    return () => { mounted = false; listener.subscription.unsubscribe(); };
+  }, []);
+  if (!authReady) return <AuthShell><p>Checking admin session...</p></AuthShell>;
+  if (!session) return <AdminLogin />;
+  return <AdminCms />;
+}
+
+function AuthShell({ children }: { children: React.ReactNode }) {
+  return <div className='admin-auth-shell'><div className='admin-auth-card'>{children}</div></div>;
+}
+
+function AdminLogin() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setBusy(true); setMessage('');
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) setMessage(error.message);
+    setBusy(false);
+  };
+  return <AuthShell>
+    <div className='auth-mark'>W</div>
+    <small className='auth-eyebrow'>WYCLIFFE STUDIOS / ADMIN</small>
+    <h1>Admin sign in</h1>
+    <p>Sign in with the admin account created in your Supabase project.</p>
+    <form onSubmit={submit} className='auth-form'>
+      <label>Email<input type='email' autoComplete='email' value={email} onChange={e => setEmail(e.target.value)} placeholder='Admin email' required /></label>
+      <label>Password<input type='password' autoComplete='current-password' value={password} onChange={e => setPassword(e.target.value)} placeholder='Password' required /></label>
+      {message && <div className='auth-error'>{message}</div>}
+      <button className='save-btn auth-submit' disabled={busy}>{busy ? 'Signing in...' : 'Sign in'}</button>
+    </form>
+    <p className='auth-note'>Admin access is intentionally restricted. Public visitors cannot use this screen to edit your site.</p>
+  </AuthShell>;
+}
+
+function AdminCms() {
   const [section, setSection] = useState<Section>('Dashboard');
   const [menu, setMenu] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -62,7 +109,7 @@ function Admin() {
           <div className='vtools'>
             {saved && <span className='saved'><Check /> Saved</span>}
             {error && <span className='vnotice'>{error}</span>}
-            <a href='./'>Exit <ChevronRight /></a>
+            <div className='vtools-actions'><a href='./'>Exit <ChevronRight /></a><button className='logout-btn' onClick={() => supabase.auth.signOut()}>Sign out</button></div>
           </div>
         </header>
         {section === 'Dashboard' ? <Dashboard /> :
