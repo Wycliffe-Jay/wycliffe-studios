@@ -269,7 +269,7 @@ function Images({ flash, fail }: { flash: () => void; fail: (e: string) => void 
   const [busy, setBusy] = useState('');
 
   const load = async () => {
-    const [h, p, t] = await Promise.all([
+    const [h, p, t, l] = await Promise.all([
       supabase.from('hero_content').select('*').limit(1).maybeSingle(),
       supabase.from('portfolio_items').select('id,title,image_url').order('sort_order'),
       supabase.from('testimonials').select('id,client_name,photo_url').order('sort_order'),
@@ -278,7 +278,7 @@ function Images({ flash, fail }: { flash: () => void; fail: (e: string) => void 
     if (h.error) fail(h.error.message);
     if (p.error) fail(p.error.message);
     if (t.error) fail(t.error.message);
-    setHero(h.data || null); setPortfolio(p.data || []); setTestimonials(t.data || []); setLogo(arguments[3]?.data?.value || '');
+    setHero(h.data || null); setPortfolio(p.data || []); setTestimonials(t.data || []); setLogo(l.data?.value || '');
   };
 
   useEffect(() => { load(); }, []);
