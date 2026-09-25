@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import Admin from './Admin';
 import './index.css';
 
-const supabase = createClient('https://shzyzqwjyyutvldyzue.supabase.co', 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
+const supabase = createClient('https://shzyzqwjyyutvldyzuee.supabase.co', 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
 type Row = Record<string, any>;
 const setting = (m: Record<string, string>, keys: string[], fallback = '') => { for (const k of keys) if (m[k] !== undefined && m[k] !== null && m[k] !== '') return m[k]; return fallback; };
 const settingKey = (m: Record<string, Row>, keys: string[]) => keys.find(k => m[k]) || keys[0];
