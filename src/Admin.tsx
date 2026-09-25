@@ -3,7 +3,7 @@ import { Check, ChevronRight, ImagePlus, LayoutDashboard, Menu, Pencil, Save, Se
 import { createClient } from '@supabase/supabase-js';
 import './admin.css';
 
-const supabase = createClient('https://shzyzqwjyyutvldyzue.supabase.co', 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
+const supabase = createClient('https://shzyzqwjyyutvldyzuee.supabase.co', 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
 
 type Section = 'Dashboard' | 'Hero Section' | 'Portfolio' | 'Services' | 'About' | 'Process' | 'Testimonials' | 'FAQ' | 'Images' | 'Settings';
 type Row = Record<string, any> & { id: string };
