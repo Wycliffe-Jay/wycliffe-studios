@@ -337,6 +337,7 @@ function SettingsPage({ flash, fail }: { flash: () => void; fail: (e: string) =>
   };
   return <div className='form-page'>
     <FormHead eyebrow='SITE SETTINGS' title='Settings' description='Brand, contact, navigation and section text.' />
+    <div className='brand-settings-note'><strong>Business name</strong><p>Edit <code>brand_name</code> below to change the name shown across the website.</p></div>
     <div className='record-stack'>{rows.map(row => <div className='setting-row' key={row.key}>
       <Field label={row.key} value={row.value} onChange={value => setRows(rows.map(item => item.key === row.key ? { ...item, value } : item))} />
       <button className='save-btn' onClick={() => save(row)}><Save /> Save</button>
