@@ -1,27 +1,89 @@
 [
   {
-    "name": "Public site loads Firebase content",
-    "sanity": true,
+    "name": "Corrected schema live site",
     "viewport": "desktop",
-    "covers": ["Firestore-backed public content loading"],
-    "description": "Verifies the public site can render with Firebase-backed content and its built-in fallbacks.",
-    "steps": ["Open the Wycliffe Studios home page", "Wait for the page content to load"],
-    "expected": "The hero, services, pricing, portfolio, and contact sections are visible."
+    "covers": [
+      "hero_content",
+      "portfolio_items",
+      "services",
+      "testimonials",
+      "about_content",
+      "process_items",
+      "faq_items",
+      "site_settings"
+    ],
+    "description": "Loads every public section from Supabase rather than hardcoded arrays.",
+    "steps": [
+      "Open public site",
+      "Navigate through all sections"
+    ],
+    "expected": "Hero, portfolio, services, about, process, testimonials, FAQ, CTA and footer reflect database values."
   },
   {
-    "name": "Admin signs in with Firebase",
+    "name": "Visual inline editing",
     "viewport": "desktop",
-    "covers": ["Firebase Authentication admin sign-in"],
-    "description": "Verifies the admin route presents a Firebase email/password login.",
-    "steps": ["Open the Admin link in the footer"],
-    "expected": "The Wycliffe Studios admin login shows email and password fields."
+    "covers": [
+      "click-to-edit",
+      "auto-save",
+      "site_settings"
+    ],
+    "description": "Edits text directly in the live site iframe.",
+    "steps": [
+      "Open #admin",
+      "Click a text element",
+      "Change it and blur"
+    ],
+    "expected": "The field updates the matching Supabase row automatically and shows Saved."
   },
   {
-    "name": "Quote request saves a lead",
+    "name": "Image replacement",
     "viewport": "mobile",
-    "covers": ["client_inquiries public create", "quote form"],
-    "description": "Verifies a visitor can submit the quote form and the app attempts to persist the lead before opening WhatsApp.",
-    "steps": ["Open Contact", "Fill name, email, phone, service, budget, and project details", "Submit the quote"],
-    "expected": "A WhatsApp quote message opens and the submission is written to client_inquiries."
+    "covers": [
+      "hero portrait",
+      "portfolio images",
+      "testimonial photos",
+      "site-images"
+    ],
+    "description": "Tap-friendly upload controls replace images through Supabase Storage.",
+    "steps": [
+      "Open #admin edit mode",
+      "Tap a supported image",
+      "Choose an image"
+    ],
+    "expected": "The image uploads to site-images, database URL updates, and image changes immediately."
+  },
+  {
+    "name": "Inline add",
+    "viewport": "mobile",
+    "covers": [
+      "portfolio",
+      "services",
+      "process",
+      "testimonials",
+      "FAQ"
+    ],
+    "description": "Adds blank repeatable records directly in the live layout.",
+    "steps": [
+      "Open a repeatable section",
+      "Tap + Add",
+      "Edit the new card"
+    ],
+    "expected": "A new row is inserted into the correct table and appears inline for immediate editing."
+  },
+  {
+    "name": "Responsive editor",
+    "viewport": "mobile",
+    "covers": [
+      "sidebar",
+      "tap targets",
+      "preview mode"
+    ],
+    "description": "Keeps the visual CMS usable without hover.",
+    "steps": [
+      "Open the admin on mobile",
+      "Open sidebar",
+      "Switch sections"
+    ],
+    "expected": "All controls remain reachable and image replacement works by tap."
   }
 ]
