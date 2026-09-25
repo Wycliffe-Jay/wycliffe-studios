@@ -325,6 +325,43 @@ function ImageSlot({ label, url, table, id, field, busy, onChange }: { label: st
   </div>;
 }
 
+function BrandIdentityEditor() {
+  const [url, setUrl] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    supabase.from('site_settings').select('value').eq('key','logo_url').maybeSingle().then(({ data }) => setUrl(data?.value || ''));
+  }, []);
+  const upload = async (file: File) => {
+    setBusy(true);
+    const ext = file.name.split('.').pop() || 'png';
+    const path = 'editor/logo-' + crypto.randomUUID() + '.' + ext;
+    const result = await supabase.storage.from('site-images').upload(path, file, { cacheControl: '3600', upsert: false });
+    if (result.error) { alert(result.error.message); setBusy(false); return; }
+    const publicUrl = supabase.storage.from('site-images').getPublicUrl(path).data.publicUrl;
+    const save = await supabase.from('site_settings').upsert({ key: 'logo_url', value: publicUrl }, { onConflict: 'key' });
+    if (save.error) alert(save.error.message);
+    else setUrl(publicUrl);
+    setBusy(false);
+  };
+  const remove = async () => {
+    const result = await supabase.from('site_settings').upsert({ key: 'logo_url', value: '' }, { onConflict: 'key' });
+    if (result.error) alert(result.error.message);
+    else setUrl('');
+  };
+  return <section className='brand-identity-editor'>
+    <div><small>BRAND IDENTITY</small><h3>Business logo</h3><p>Upload the logo that should appear beside your business name.</p></div>
+    <div className='brand-logo-editor-row'>
+      <div className='brand-logo-preview'>{url ? <img src={url} alt='Current logo' /> : <span>W</span>}</div>
+      <div className='brand-logo-actions'>
+        <label className='upload-btn'><Upload /> {busy ? 'Uploading...' : 'Upload / Replace'}
+          <input hidden type='file' accept='image/png,image/jpeg,image/webp,image/svg+xml' disabled={busy} onChange={e => e.target.files?.[0] && upload(e.target.files[0])} />
+        </label>
+        <button className='remove-image' disabled={!url || busy} onClick={remove}><Trash2 /> Remove logo</button>
+      </div>
+    </div>
+  </section>;
+}
+
 function SettingsPage({ flash, fail }: { flash: () => void; fail: (e: string) => void }) {
   const [rows, setRows] = useState<Row[]>([]);
   useEffect(() => {
@@ -339,6 +376,7 @@ function SettingsPage({ flash, fail }: { flash: () => void; fail: (e: string) =>
   };
   return <div className='form-page'>
     <FormHead eyebrow='SITE SETTINGS' title='Settings' description='Brand, contact, navigation and section text.' />
+    <BrandIdentityEditor />
     <div className='brand-settings-note'><strong>Business name</strong><p>Edit <code>brand_name</code> below to change the name shown across the website.</p></div>
     <div className='record-stack'>{rows.map(row => <div className='setting-row' key={row.key}>
       <Field label={row.key} value={row.value} onChange={value => setRows(rows.map(item => item.key === row.key ? { ...item, value } : item))} />
