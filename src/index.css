@@ -375,3 +375,30 @@ h1,h2,h3,.big-copy,.quote p,.faq-row,.faq-row strong,.brand,.nav-links button:no
     box-sizing:border-box!important;
   }
 }
+
+
+/* Keep the primary booking action visible in the header on every device. */
+.nav .nav-cta-always{
+  display:inline-flex!important;
+  flex:0 0 auto;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:46px;
+  padding:11px 17px;
+  margin-left:auto;
+  white-space:nowrap;
+  position:relative;
+  z-index:42;
+  background:#1769AA!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+@media(max-width:900px){
+  .nav .nav-cta-always{margin-left:auto;margin-right:12px}
+  .nav .nav-links{right:4vw}
+}
+@media(max-width:560px){
+  .nav .nav-cta-always{min-height:42px;padding:9px 12px;font-size:13px;gap:3px;margin-right:8px}
+  .nav .nav-cta-always svg{width:14px;height:14px}
+}
