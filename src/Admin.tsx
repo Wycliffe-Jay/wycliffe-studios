@@ -362,27 +362,116 @@ function BrandIdentityEditor() {
   </section>;
 }
 
+const editableSiteSettings: { group: string; fields: [string, string, string][] }[] = [
+  { group: 'Header & navigation', fields: [
+    ['nav_work','Work link label','Work'], ['nav_services','Services link label','Services'],
+    ['nav_process','Process link label','Process'], ['nav_about','About link label','About'],
+    ['nav_cta','Header button label','Get a quote']
+  ]},
+  { group: 'Brand & contact', fields: [
+    ['brand_name','Business name','Wycliffe Studios'], ['contact_email','Contact email','radacliffemensah@gmail.com'],
+    ['whatsapp_number','WhatsApp number','0591911002'], ['footer_copyright','Footer copyright','© 2026 Wycliffe Mensah']
+  ]},
+  { group: 'Hero section', fields: [
+    ['hero_eyebrow','Small label','Available for selected projects'],
+    ['hero_headline_line1','Headline line 1','Design that makes'], ['hero_headline_line2','Headline line 2','businesses seen.'],
+    ['hero_subheadline','Description','I create sharp, memorable graphics for Ghanaian traders and growing businesses.'],
+    ['hero_primary_cta','Main button label','Get a free quote'], ['hero_secondary_cta','Second button label','See my work'],
+    ['hero_trust_1','Trust point 1','Clear communication'], ['hero_trust_2','Trust point 2','Business-focused'],
+    ['hero_trust_3','Trust point 3','Fast project brief'], ['hero_card_label','Card top-left label','WYCLIFFE / 01'],
+    ['hero_card_location','Card top-right label','GHANA'], ['hero_card_image_label','Image tag','VISUAL IDENTITY'],
+    ['hero_card_headline','Card heading','Visual identity.'], ['hero_service_1','Card service 1','POSTERS'],
+    ['hero_service_2','Card service 2','LOGOS'], ['hero_service_3','Card service 3','BANNERS']
+  ]},
+  { group: 'Section headings & descriptions', fields: [
+    ['proof_label','Client experience label','Client experience'], ['proof_heading','Client experience heading','Designed to earn attention.'],
+    ['marquee_text','Moving banner text','POSTERS ✦ LOGOS ✦ BANNERS ✦ BRAND VISUALS ✦ SOCIAL GRAPHICS'],
+    ['work_label','Work section label','01 / Selected work'], ['work_heading','Work heading','Ideas, made visible.'],
+    ['work_description','Work description','Concept-led visuals built to stop the scroll and explain the offer.'],
+    ['services_label','Services section label','02 / What I do'], ['services_heading','Services heading','Design with a purpose.'],
+    ['services_description','Services description','Every visual is built around clarity, attention and the action you want customers to take.'],
+    ['about_label','About section label','03 / Why Wycliffe'], ['about_heading','About heading','Good design should feel like an advantage.'],
+    ['process_label','Process section label','04 / The process'], ['process_heading','Process heading','Simple from start to finish.'],
+    ['process_description','Process description','A focused process keeps projects moving.'],
+    ['testimonials_label','Testimonials section label','05 / Client words'], ['testimonials_heading','Testimonials heading','What clients say.'],
+    ['quote_label','Quote section label','06 / Start a project'], ['quote_heading','Quote heading','Tell me what you need. I’ll take it from there.'],
+    ['quote_description','Quote description','Give me the basics and I’ll reply with a clear next step.'],
+    ['faq_label','FAQ section label','07 / FAQ'], ['faq_heading','FAQ heading','Before we start.'],
+    ['cta_label','Bottom call-to-action label','08 / Have a project?'], ['cta_heading','Bottom call-to-action heading','Let’s make your next idea visible.'],
+    ['cta_description','Bottom call-to-action description','Ready when you are. Start with a quick project request.']
+  ]},
+  { group: 'Quote form & footer buttons', fields: [
+    ['quote_name_label','Name field label','Name'], ['quote_name_placeholder','Name placeholder','Your name'],
+    ['quote_business_label','Business field label','Business'], ['quote_business_placeholder','Business placeholder','Business name'],
+    ['quote_service_label','Service field label','What do you need?'], ['quote_service_placeholder','Service placeholder','Choose a service'],
+    ['quote_budget_label','Budget field label','Budget range'], ['quote_budget_placeholder','Budget placeholder','Select budget'],
+    ['quote_deadline_label','Deadline field label','Deadline'], ['quote_deadline_placeholder','Deadline placeholder','e.g. Friday'],
+    ['quote_contact_label','Contact field label','Email or phone'], ['quote_contact_placeholder','Contact placeholder','How should I reach you?'],
+    ['quote_details_label','Project details label','Tell me about the project'],
+    ['quote_details_placeholder','Project details placeholder','What are you promoting or building?'],
+    ['quote_submit_label','Submit button label','Request my quote'], ['quote_form_note','Form note','Submitting opens your email app. Nothing is stored on this website.'],
+    ['cta_quote_button','Bottom quote button','Get a free quote'], ['cta_email_button','Bottom email button','Email Wycliffe'],
+    ['cta_whatsapp_button','Bottom WhatsApp button','WhatsApp'], ['scroll_hint','Scroll hint','Scroll to explore']
+  ]}
+];
+
 function SettingsPage({ flash, fail }: { flash: () => void; fail: (e: string) => void }) {
   const [rows, setRows] = useState<Row[]>([]);
+  const [customKey, setCustomKey] = useState('');
+  const [customValue, setCustomValue] = useState('');
+  const [busy, setBusy] = useState('');
   useEffect(() => {
     supabase.from('site_settings').select('*').order('key').then(({ data, error }) => {
       if (error) fail(error.message);
-      setRows(data || []);
+      const existing = data || [];
+      const known = new Set(existing.map((r: Row) => r.key));
+      const missing = editableSiteSettings.flatMap(group => group.fields)
+        .filter(([key]) => !known.has(key))
+        .map(([key, , value]) => ({ key, value }));
+      setRows([...existing, ...missing.map((r, i) => ({ ...r, id: 'draft-' + i }))]);
     });
   }, []);
   const save = async (row: Row) => {
-    const result = await supabase.from('site_settings').update({ value: row.value }).eq('key', row.key);
-    result.error ? fail(result.error.message) : flash();
+    setBusy(row.key);
+    const result = await supabase.from('site_settings').upsert({ key: row.key, value: String(row.value ?? '') }, { onConflict: 'key' });
+    if (result.error) fail(result.error.message);
+    else { setRows(current => current.map(item => item.key === row.key ? { ...item, id: row.key } : item)); flash(); }
+    setBusy('');
+  };
+  const saveAll = async () => {
+    setBusy('*');
+    const result = await supabase.from('site_settings').upsert(rows.map(({ key, value }) => ({ key, value: String(value ?? '') })), { onConflict: 'key' });
+    if (result.error) fail(result.error.message); else flash();
+    setBusy('');
+  };
+  const field = (key: string, label: string, fallback: string) => {
+    const row = rows.find(r => r.key === key) || { key, value: fallback, id: 'draft-' + key };
+    return <div className='setting-row' key={key}>
+      <Field label={label} value={row.value ?? fallback} onChange={value => setRows(current => current.some(r => r.key === key) ? current.map(r => r.key === key ? { ...r, value } : r) : [...current, { ...row, value }])} />
+      <button className='save-btn' disabled={busy === key || busy === '*'} onClick={() => save(row)}><Save /> {busy === key ? 'Saving...' : 'Save'}</button>
+    </div>;
   };
   return <div className='form-page'>
-    <FormHead eyebrow='SITE SETTINGS' title='Settings' description='Brand, contact, navigation and section text.' />
+    <FormHead eyebrow='SITE SETTINGS' title='Website content & controls' description='Edit the header links, every section heading, button labels, contact details and quote form text. Save each field or save everything together.' action={<button className='save-btn' disabled={!!busy} onClick={saveAll}><Save /> {busy === '*' ? 'Saving...' : 'Save all settings'}</button>} />
     <BrandIdentityEditor />
-    <div className='brand-settings-note'><strong>Business name</strong><p>Edit <code>brand_name</code> below to change the name shown across the website.</p></div>
-    <div className='record-stack'>{rows.map(row => <div className='setting-row' key={row.key}>
-      <Field label={row.key} value={row.value} onChange={value => setRows(rows.map(item => item.key === row.key ? { ...item, value } : item))} />
-      <button className='save-btn' onClick={() => save(row)}><Save /> Save</button>
-    </div>)}</div>
+    {editableSiteSettings.map(group => <section className='settings-group' key={group.group}>
+      <h3>{group.group}</h3>
+      <div className='record-stack'>{group.fields.map(([key,label,value]) => field(key,label,value))}</div>
+    </section>)}
+    <section className='settings-group'>
+      <h3>Other saved settings</h3>
+      <p className='settings-help'>Additional settings already stored in your database.</p>
+      <div className='record-stack'>{rows.filter(row => !editableSiteSettings.some(group => group.fields.some(([key]) => key === row.key)) && row.key !== 'logo_url').map(row =>
+        <div className='setting-row' key={row.key}>
+          <Field label={row.key} value={row.value} onChange={value => setRows(current => current.map(item => item.key === row.key ? { ...item, value } : item))} />
+          <button className='save-btn' disabled={!!busy} onClick={() => save(row)}><Save /> Save</button>
+        </div>)}</div>
+      <div className='setting-row custom-setting'>
+        <Field label='New setting key' value={customKey} onChange={setCustomKey} />
+        <Field label='Value' value={customValue} onChange={setCustomValue} />
+        <button className='add-btn' disabled={!customKey.trim() || rows.some(r => r.key === customKey.trim())} onClick={() => { const key = customKey.trim(); setRows(current => [...current, { key, value: customValue, id: 'draft-' + key }]); setCustomKey(''); setCustomValue(''); }}>+ Add</button>
+      </div>
+    </section>
   </div>;
 }
-
 export default Admin;
