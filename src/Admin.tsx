@@ -28,7 +28,7 @@ function Admin() {
   }, []);
   if (!authReady) return <AuthShell><p>Checking admin session...</p></AuthShell>;
   if (!session) return <AdminLogin />;
-  if (session.user?.id !== ADMIN_UID) return <AuthShell><h1>Admin access required</h1><p>This signed-in session is not matching the configured admin account.</p><p className='auth-note'>Signed-in user ID: <code>{session.user?.id || 'unknown'}</code><br/>Configured admin ID: <code>{ADMIN_UID}</code></p><button className='save-btn auth-submit' onClick={() => supabase.auth.signOut()}>Sign out</button></AuthShell>;
+  if (session.user?.id !== ADMIN_UID) return <AuthShell><h1>Admin access required</h1><p>This account is not authorized to manage Wycliffe Studios.</p><button className='save-btn auth-submit' onClick={() => supabase.auth.signOut()}>Sign out</button></AuthShell>;
   return <AdminCms />;
 }
 
