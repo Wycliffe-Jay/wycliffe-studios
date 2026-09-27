@@ -309,3 +309,69 @@ h1,h2,h3,.big-copy,.quote p,.faq-row,.faq-row strong,.brand,.nav-links button:no
 }
 
 .quote-choice{position:relative;max-width:620px;margin:20px auto 0;padding:24px;border:1px solid rgba(59,155,224,.28);border-radius:20px;background:rgba(255,255,255,.96);box-shadow:0 20px 60px rgba(11,15,25,.14);color:#0B0F19}.quote-choice h3{font-size:22px;margin:0 32px 8px 0}.quote-choice p{color:#5C6270;line-height:1.6;margin:0 0 18px}.quote-choice>div{display:flex;gap:10px;flex-wrap:wrap}.quote-choice>div a{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;padding:12px 16px;border-radius:11px}.quote-choice>div a.secondary{border:1px solid #dce5ee;background:#fff;color:#0B0F19}.quote-choice-close{position:absolute;right:14px;top:14px;border:0;background:#eef4fa;border-radius:50%;width:34px;height:34px;display:grid;place-items:center;cursor:pointer}.form-submit:disabled{opacity:.65;cursor:wait}@media(max-width:560px){.quote-choice{padding:20px}.quote-choice>div{display:grid}.quote-choice>div a{width:100%}}
+
+/* Book a Service buttons: enforce brand contrast across desktop and mobile. */
+.nav .nav-links .nav-cta,
+.hero-actions .primary,
+.quote-section .form-submit,
+.quote-choice a.primary,
+.cta .primary,
+.bottom-cta .primary {
+  background-color:#1769AA!important;
+  background-image:linear-gradient(135deg,#1769AA 0%,#145A96 100%)!important;
+  color:#FFFFFF!important;
+  -webkit-text-fill-color:#FFFFFF!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  box-shadow:0 10px 26px rgba(23,105,170,.24)!important;
+  opacity:1!important;
+  text-decoration:none!important;
+}
+.nav .nav-links .nav-cta:hover,
+.hero-actions .primary:hover,
+.quote-section .form-submit:hover,
+.quote-choice a.primary:hover,
+.cta .primary:hover,
+.bottom-cta .primary:hover {
+  background-color:#145A96!important;
+  background-image:linear-gradient(135deg,#145A96 0%,#104879 100%)!important;
+  color:#FFFFFF!important;
+  -webkit-text-fill-color:#FFFFFF!important;
+}
+.nav .nav-links .nav-cta:active,
+.hero-actions .primary:active,
+.quote-section .form-submit:active,
+.quote-choice a.primary:active,
+.cta .primary:active,
+.bottom-cta .primary:active {
+  background-color:#104879!important;
+  background-image:none!important;
+  color:#FFFFFF!important;
+  -webkit-text-fill-color:#FFFFFF!important;
+  transform:translateY(1px);
+}
+.nav .nav-links .nav-cta:focus-visible,
+.hero-actions .primary:focus-visible,
+.quote-section .form-submit:focus-visible,
+.quote-choice a.primary:focus-visible,
+.cta .primary:focus-visible,
+.bottom-cta .primary:focus-visible {
+  outline:3px solid rgba(59,155,224,.65)!important;
+  outline-offset:3px!important;
+}
+@media(max-width:900px){
+  .nav .nav-links .nav-cta{width:100%;min-height:48px;box-sizing:border-box}
+}
+@media(max-width:560px){
+  .nav .nav-links .nav-cta,
+  .hero-actions .primary,
+  .quote-section .form-submit,
+  .quote-choice a.primary,
+  .cta .primary,
+  .bottom-cta .primary {
+    min-height:48px!important;
+    padding:13px 18px!important;
+    border-radius:999px!important;
+    font-size:15px!important;
+    box-sizing:border-box!important;
+  }
+}
