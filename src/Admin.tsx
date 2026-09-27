@@ -3,6 +3,7 @@ import { Check, ChevronRight, ImagePlus, LayoutDashboard, Menu, Pencil, Save, Se
 import { createClient } from '@supabase/supabase-js';
 import './admin.css';
 import CRM from './CRM';
+import { ADMIN_UID } from './supabase';
 
 const supabase = createClient('https://shzyzqwjyyutvldyzuee.supabase.co', 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
 
@@ -30,6 +31,7 @@ function Admin() {
   }, []);
   if (!authReady) return <AuthShell><p>Checking admin session...</p></AuthShell>;
   if (!session) return <AdminLogin />;
+  if (session.user?.id !== ADMIN_UID) return <AuthShell><h1>Admin access required</h1><p>This account is not authorized to manage Wycliffe Studios.</p><button className='save-btn auth-submit' onClick={() => supabase.auth.signOut()}>Sign out</button></AuthShell>;
   return <AdminCms />;
 }
 
