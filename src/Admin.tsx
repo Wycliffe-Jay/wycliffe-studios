@@ -410,6 +410,8 @@ const editableSiteSettings: { group: string; fields: [string, string, string][] 
     ['quote_details_label','Project details label','Tell me about the project'],
     ['quote_details_placeholder','Project details placeholder','What are you promoting or building?'],
     ['quote_submit_label','Submit button label','Request my quote'], ['quote_form_note','Form note','Submitting opens your email app. Nothing is stored on this website.'],
+    ['quote_proof_1','Quote reassurance 1','No complicated brief required'], ['quote_proof_2','Quote reassurance 2','Tell me your deadline upfront'], ['quote_proof_3','Quote reassurance 3','Final files prepared for use'],
+    ['budget_options','Budget options (separate with |)','Under GHS 200 | GHS 200–500 | GHS 500–1,000 | GHS 1,000+ | Not sure yet'],
     ['cta_quote_button','Bottom quote button','Get a free quote'], ['cta_email_button','Bottom email button','Email Wycliffe'],
     ['cta_whatsapp_button','Bottom WhatsApp button','WhatsApp'], ['scroll_hint','Scroll hint','Scroll to explore']
   ]}
