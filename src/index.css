@@ -279,3 +279,31 @@ h1,h2,h3,.big-copy,.quote p,.faq-row,.faq-row strong,.brand,.nav-links button:no
   .faq-row strong{font-size:16px!important;line-height:1.4!important}
   .faq-row p,.faq-row.active p{margin-left:39px!important;font-size:13px;line-height:1.55}
 }
+
+
+/* FAQ answer visibility: render only the open answer, without reveal/height delays */
+.faq-row{opacity:1!important;transform:none!important}
+.faq-row:hover{transform:translateY(-2px)!important}
+.faq-row .faq-answer,
+.faq-row.active .faq-answer{
+  display:block!important;
+  grid-column:1/-1!important;
+  width:100%;
+  max-height:none!important;
+  height:auto!important;
+  overflow:visible!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+  margin:14px 0 0 48px!important;
+  padding:0!important;
+  line-height:1.6!important;
+  transition:none!important;
+}
+@media(max-width:560px){
+  .faq-row .faq-answer,.faq-row.active .faq-answer{
+    grid-column:1/-1!important;
+    margin:12px 0 0 39px!important;
+    font-size:13px!important;
+  }
+}
