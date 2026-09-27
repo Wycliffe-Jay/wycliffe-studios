@@ -366,7 +366,7 @@ const editableSiteSettings: { group: string; fields: [string, string, string][] 
   { group: 'Header & navigation', fields: [
     ['nav_work','Work link label','Work'], ['nav_services','Services link label','Services'],
     ['nav_process','Process link label','Process'], ['nav_about','About link label','About'],
-    ['nav_cta','Header button label','Get a quote']
+    ['nav_cta','Header button label','Book a Service']
   ]},
   { group: 'Brand & contact', fields: [
     ['brand_name','Business name','Wycliffe Studios'], ['contact_email','Contact email','radacliffemensah@gmail.com'],
@@ -376,7 +376,7 @@ const editableSiteSettings: { group: string; fields: [string, string, string][] 
     ['hero_eyebrow','Small label','Available for selected projects'],
     ['hero_headline_line1','Headline line 1','Design that makes'], ['hero_headline_line2','Headline line 2','businesses seen.'],
     ['hero_subheadline','Description','I create sharp, memorable graphics for Ghanaian traders and growing businesses.'],
-    ['hero_primary_cta','Main button label','Get a free quote'], ['hero_secondary_cta','Second button label','See my work'],
+    ['hero_primary_cta','Main button label','Book a Service'], ['hero_secondary_cta','Second button label','See my work'],
     ['hero_trust_1','Trust point 1','Clear communication'], ['hero_trust_2','Trust point 2','Business-focused'],
     ['hero_trust_3','Trust point 3','Fast project brief'], ['hero_card_label','Card top-left label','WYCLIFFE / 01'],
     ['hero_card_location','Card top-right label','GHANA'], ['hero_card_image_label','Image tag','VISUAL IDENTITY'],
@@ -409,10 +409,10 @@ const editableSiteSettings: { group: string; fields: [string, string, string][] 
     ['quote_contact_label','Contact field label','Email or phone'], ['quote_contact_placeholder','Contact placeholder','How should I reach you?'],
     ['quote_details_label','Project details label','Tell me about the project'],
     ['quote_details_placeholder','Project details placeholder','What are you promoting or building?'],
-    ['quote_submit_label','Submit button label','Request my quote'], ['quote_form_note','Form note','Submitting opens your email app. Nothing is stored on this website.'],
+    ['quote_submit_label','Submit button label','Book a Service'], ['quote_form_note','Form note','Submitting opens your email app. Nothing is stored on this website.'],
     ['quote_proof_1','Quote reassurance 1','No complicated brief required'], ['quote_proof_2','Quote reassurance 2','Tell me your deadline upfront'], ['quote_proof_3','Quote reassurance 3','Final files prepared for use'],
     ['budget_options','Budget options (separate with |)','Under GHS 200 | GHS 200–500 | GHS 500–1,000 | GHS 1,000+ | Not sure yet'],
-    ['cta_quote_button','Bottom quote button','Get a free quote'], ['cta_email_button','Bottom email button','Email Wycliffe'],
+    ['cta_quote_button','Bottom quote button','Book a Service'], ['cta_email_button','Bottom email button','Email Wycliffe'],
     ['cta_whatsapp_button','Bottom WhatsApp button','WhatsApp'], ['scroll_hint','Scroll hint','Scroll to explore']
   ]}
 ];
