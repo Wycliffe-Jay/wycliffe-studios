@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react';
 import { Check, ChevronRight, ImagePlus, LayoutDashboard, Menu, Pencil, Save, Settings, Trash2, Upload, UserRound, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import './admin.css';
+import CRM from './CRM';
 
 const supabase = createClient('https://shzyzqwjyyutvldyzuee.supabase.co', 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
 
-type Section = 'Dashboard' | 'Hero Section' | 'Portfolio' | 'Services' | 'About' | 'Process' | 'Testimonials' | 'FAQ' | 'Images' | 'Settings';
+type Section = 'Dashboard' | 'Hero Section' | 'Portfolio' | 'Services' | 'About' | 'Process' | 'Testimonials' | 'FAQ' | 'Images' | 'Settings' | 'Overview' | 'Clients' | 'Inquiries' | 'Sales Pipeline' | 'Projects' | 'Payments' | 'Follow-ups' | 'Reports';
 type Row = Record<string, any> & { id: string };
 
 const nav: [Section, any][] = [
   ['Dashboard', LayoutDashboard], ['Hero Section', Pencil], ['Portfolio', ImagePlus],
   ['Services', Settings], ['About', UserRound], ['Process', Settings],
-  ['Testimonials', UserRound], ['FAQ', Settings], ['Images', ImagePlus], ['Settings', Settings]
+  ['Testimonials', UserRound], ['FAQ', Settings], ['Images', ImagePlus], ['Settings', Settings],
+  ['Overview', LayoutDashboard], ['Clients', UserRound], ['Inquiries', Pencil], ['Sales Pipeline', Settings], ['Projects', ImagePlus], ['Payments', Settings], ['Follow-ups', Settings], ['Reports', LayoutDashboard]
 ];
 
 function Admin() {
@@ -113,6 +115,7 @@ function AdminCms() {
           </div>
         </header>
         {section === 'Dashboard' ? <Dashboard /> :
+          ['Overview','Clients','Inquiries','Sales Pipeline','Projects','Payments','Follow-ups','Reports'].includes(section) ? <CRM onClose={() => select('Dashboard')} initialPage={section as any} /> :
           section === 'Images' ? <Images flash={flash} fail={fail} /> :
           section === 'Settings' ? <SettingsPage flash={flash} fail={fail} /> :
           <FormPage section={section} flash={flash} fail={fail} />}
