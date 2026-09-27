@@ -16,8 +16,8 @@ const config:Record<Exclude<Page,'Overview'|'Sales Pipeline'|'Reports'>,{table:s
 };
 const money=(v:number)=>'GH₵'+Number(v||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const date=(v:string)=>v?new Date(v).toLocaleDateString(): '—';
-export default function CRM({onClose}:{onClose:()=>void}){
- const [page,setPage]=useState<Page>('Overview'),[clients,setClients]=useState<AnyRow[]>([]),[inquiries,setInquiries]=useState<AnyRow[]>([]),[projects,setProjects]=useState<AnyRow[]>([]),[payments,setPayments]=useState<AnyRow[]>([]),[followups,setFollowups]=useState<AnyRow[]>([]),[activities,setActivities]=useState<AnyRow[]>([]);
+export default function CRM({onClose,initialPage='Overview'}:{onClose:()=>void;initialPage?:Page}){
+ const [page,setPage]=useState<Page>(initialPage),[clients,setClients]=useState<AnyRow[]>([]),[inquiries,setInquiries]=useState<AnyRow[]>([]),[projects,setProjects]=useState<AnyRow[]>([]),[payments,setPayments]=useState<AnyRow[]>([]),[followups,setFollowups]=useState<AnyRow[]>([]),[activities,setActivities]=useState<AnyRow[]>([]);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[query,setQuery]=useState(''),[editing,setEditing]=useState<AnyRow|null>(null),[creating,setCreating]=useState(false);
  const load=async()=>{setBusy(true);setError('');const names=['clients','inquiries','projects','payments','follow_ups','activity_logs'];const rs=await Promise.all(names.map(t=>db.from(t).select('*').order(t==='activity_logs'||t==='payments'||t==='follow_ups'?'created_at':'created_at',{ascending:false}).limit(500)));const bad=rs.find(r=>r.error);if(bad)setError(bad.error.message);else{setClients(rs[0].data||[]);setInquiries(rs[1].data||[]);setProjects(rs[2].data||[]);setPayments(rs[3].data||[]);setFollowups(rs[4].data||[]);setActivities(rs[5].data||[]);}setBusy(false);};
  useEffect(()=>{void load()},[]);
