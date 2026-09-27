@@ -255,7 +255,7 @@ function CrudForm({ table, section, flash, fail }: { table: string; section: str
           <Field key={key} label={label} value={row[key]} onChange={value => setRows(rows.map(item => item.id === row.id ? { ...item, [key]: value } : item))}
             multi={['description', 'quote', 'answer'].includes(key)} />
         )}</div>
-        <button className='save-btn' onClick={() => save(row)}><Save /> Save</button>
+        <button className='save-btn' onClick={() => save(rows.find(item => item.key === row.key) || row)}><Save /> Save</button>
       </div>)}
     </div>
   </div>;
@@ -450,7 +450,7 @@ function SettingsPage({ flash, fail }: { flash: () => void; fail: (e: string) =>
     const row = rows.find(r => r.key === key) || { key, value: fallback, id: 'draft-' + key };
     return <div className='setting-row' key={key}>
       <Field label={label} value={row.value ?? fallback} onChange={value => setRows(current => current.some(r => r.key === key) ? current.map(r => r.key === key ? { ...r, value } : r) : [...current, { ...row, value }])} />
-      <button className='save-btn' disabled={busy === key || busy === '*'} onClick={() => save(row)}><Save /> {busy === key ? 'Saving...' : 'Save'}</button>
+      <button className='save-btn' disabled={busy === key || busy === '*'} onClick={() => save(rows.find(item => item.key === key) || row)}><Save /> {busy === key ? 'Saving...' : 'Save'}</button>
     </div>;
   };
   return <div className='form-page'>
