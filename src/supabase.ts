@@ -5,7 +5,7 @@ const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-export const ADMIN_UID = 'ecbb9203-f2aa-4c73-b471-dee154ea56ac';
+export const ADMIN_UID = '617fe2f1-a6d6-4a49-bb20-d7c09857452f';
 
 export async function signInAdmin(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
