@@ -10,7 +10,7 @@ const setting = (m: Record<string, string>, keys: string[], fallback = '') => { 
 const settingKey = (m: Record<string, Row>, keys: string[]) => keys.find(k => m[k]) || keys[0];
 const defaults = {
   brand_name:'Wycliffe Studios',contact_email:'radacliffemensah@gmail.com',whatsapp_number:'0591911002',footer_copyright:'© 2026 Wycliffe Mensah',
-  nav_work:'work',nav_services:'services',nav_process:'process',nav_about:'about',nav_cta:'Get a quote',
+  nav_work:'work',nav_services:'services',nav_process:'process',nav_about:'about',nav_cta:'Book a Service',
   hero_eyebrow:'Available for selected projects',hero_headline_line1:'Design that makes',hero_headline_line2:'businesses seen.',hero_subheadline:'I create sharp, memorable graphics for Ghanaian traders and growing businesses — designed to attract attention and turn interest into enquiries.',hero_primary_cta:'Get a free quote',hero_secondary_cta:'See my work',hero_trust_1:'Clear communication',hero_trust_2:'Business-focused',hero_trust_3:'Fast project brief',
   hero_card_label:'WYCLIFFE / 01',hero_card_location:'GHANA',hero_card_image_label:'VISUAL IDENTITY',hero_card_headline:'Visual identity.',hero_service_1:'POSTERS',hero_service_2:'LOGOS',hero_service_3:'BANNERS',
   proof_label:'Client experience',proof_heading:'Designed to earn attention.',marquee_text:'POSTERS ✦ LOGOS ✦ BANNERS ✦ BRAND VISUALS ✦ SOCIAL GRAPHICS',
