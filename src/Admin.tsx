@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Check, ChevronRight, ImagePlus, LayoutDashboard, Menu, Pencil, Save, Settings, Trash2, Upload, UserRound, X } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 import './admin.css';
 import CRM from './CRM';
-import { ADMIN_UID } from './supabase';
-
-const supabase = createClient('https://shzyzqwjyyutvldyzuee.supabase.co', 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
+import { supabase, ADMIN_UID } from './supabase';
 
 type Section = 'Dashboard' | 'Hero Section' | 'Portfolio' | 'Services' | 'About' | 'Process' | 'Testimonials' | 'FAQ' | 'Images' | 'Settings' | 'Overview' | 'Clients' | 'Inquiries' | 'Sales Pipeline' | 'Projects' | 'Payments' | 'Follow-ups' | 'Reports';
 type Row = Record<string, any> & { id: string };
@@ -22,7 +19,7 @@ function Admin() {
   const [session, setSession] = useState<any>(null);
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data }) => { if (mounted) { setSession(data.session); setAuthReady(true); } });
+    supabase.auth.getUser().then(({ data, error }) => { if (mounted) { setSession(error || !data.user ? null : { user: data.user }); setAuthReady(true); } });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setAuthReady(true);
