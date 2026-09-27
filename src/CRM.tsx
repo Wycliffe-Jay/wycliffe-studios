@@ -20,7 +20,7 @@ export default function CRM({onClose,initialPage='Overview'}:{onClose:()=>void;i
  const [page,setPage]=useState<Page>(initialPage),[clients,setClients]=useState<AnyRow[]>([]),[inquiries,setInquiries]=useState<AnyRow[]>([]),[projects,setProjects]=useState<AnyRow[]>([]),[payments,setPayments]=useState<AnyRow[]>([]),[followups,setFollowups]=useState<AnyRow[]>([]),[activities,setActivities]=useState<AnyRow[]>([]);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[query,setQuery]=useState(''),[editing,setEditing]=useState<AnyRow|null>(null),[creating,setCreating]=useState(false);
  const load=async()=>{setBusy(true);setError('');const names=['clients','inquiries','projects','payments','follow_ups','activity_logs'];const rs=await Promise.all(names.map(t=>db.from(t).select('*').order(t==='activity_logs'||t==='payments'||t==='follow_ups'?'created_at':'created_at',{ascending:false}).limit(500)));const bad=rs.find(r=>r.error);if(bad)setError(bad.error.message);else{setClients(rs[0].data||[]);setInquiries(rs[1].data||[]);setProjects(rs[2].data||[]);setPayments(rs[3].data||[]);setFollowups(rs[4].data||[]);setActivities(rs[5].data||[]);}setBusy(false);};
- useEffect(()=>{void load()},[]);
+ useEffect(()=>{void load()},[]);useEffect(()=>{setPage(initialPage)},[initialPage]);
  const revenue=payments.filter(p=>p.status!=='Voided').reduce((s,p)=>s+Number(p.amount||0),0);
  const paid=(id:string)=>payments.filter(p=>p.project_id===id&&p.status!=='Voided').reduce((s,p)=>s+Number(p.amount||0),0);
  const due=followups.filter(f=>f.status==='Pending'&&new Date(f.scheduled_date)<new Date(new Date().toDateString()));
