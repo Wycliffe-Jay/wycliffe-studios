@@ -402,3 +402,29 @@ h1,h2,h3,.big-copy,.quote p,.faq-row,.faq-row strong,.brand,.nav-links button:no
   .nav .nav-cta-always{min-height:42px;padding:9px 12px;font-size:13px;gap:3px;margin-right:8px}
   .nav .nav-cta-always svg{width:14px;height:14px}
 }
+
+/* Final responsive CTA hardening: keep the header booking action readable and keyboard-accessible. */
+.nav .nav-cta-always:hover{
+  background:#145A96!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  box-shadow:0 10px 26px rgba(23,105,170,.30)!important;
+}
+.nav .nav-cta-always:active{
+  background:#104879!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  transform:translateY(1px);
+}
+.nav .nav-cta-always:focus-visible{
+  outline:3px solid rgba(59,155,224,.65)!important;
+  outline-offset:3px!important;
+}
+@media(max-width:560px){
+  .nav .nav-cta-always{
+    min-width:0;
+    max-width:42vw;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+}
