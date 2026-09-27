@@ -363,6 +363,7 @@ function BrandIdentityEditor() {
 }
 
 const editableSiteSettings: { group: string; fields: [string, string, string][] }[] = [
+  { group: 'Appearance & colors', fields: [['theme_background','Page background color','#F7F8FA'],['theme_text','Main text color','#0B1628'],['theme_muted','Muted text color','#5C6878'],['theme_accent','Main blue accent','#2477D4'],['theme_gold','Small gold accent','#D4A24C']] },
   { group: 'Header & navigation', fields: [
     ['nav_work','Work link label','Work'], ['nav_services','Services link label','Services'],
     ['nav_process','Process link label','Process'], ['nav_about','About link label','About'],
