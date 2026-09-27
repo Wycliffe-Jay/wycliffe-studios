@@ -307,3 +307,5 @@ h1,h2,h3,.big-copy,.quote p,.faq-row,.faq-row strong,.brand,.nav-links button:no
     font-size:13px!important;
   }
 }
+
+.quote-choice{position:relative;max-width:620px;margin:20px auto 0;padding:24px;border:1px solid rgba(59,155,224,.28);border-radius:20px;background:rgba(255,255,255,.96);box-shadow:0 20px 60px rgba(11,15,25,.14);color:#0B0F19}.quote-choice h3{font-size:22px;margin:0 32px 8px 0}.quote-choice p{color:#5C6270;line-height:1.6;margin:0 0 18px}.quote-choice>div{display:flex;gap:10px;flex-wrap:wrap}.quote-choice>div a{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;padding:12px 16px;border-radius:11px}.quote-choice>div a.secondary{border:1px solid #dce5ee;background:#fff;color:#0B0F19}.quote-choice-close{position:absolute;right:14px;top:14px;border:0;background:#eef4fa;border-radius:50%;width:34px;height:34px;display:grid;place-items:center;cursor:pointer}.form-submit:disabled{opacity:.65;cursor:wait}@media(max-width:560px){.quote-choice{padding:20px}.quote-choice>div{display:grid}.quote-choice>div a{width:100%}}
