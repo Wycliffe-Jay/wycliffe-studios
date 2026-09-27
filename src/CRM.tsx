@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, ChartNoAxesCombined, CircleDollarSign, ClipboardList, KanbanSquare, Plus, RefreshCw, Search, UserRound, Users, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CalendarClock, ChartNoAxesCombined, CircleDollarSign, ClipboardList, KanbanSquare, Plus, RefreshCw, Search, Users, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import './crm.css';
 
@@ -34,7 +34,7 @@ export default function CRM({onClose,initialPage='Overview'}:{onClose:()=>void;i
  const filtered=rows.filter(r=>JSON.stringify(r).toLowerCase().includes(query.toLowerCase()));
  const selectedClient=(id:string)=>clients.find(c=>c.id===id);
  const selectedProject=(id:string)=>projects.find(p=>p.id===id);
- const exportCsv=()=>{const data=page==='Reports'?payments:filtered;const keys=Array.from(new Set(data.flatMap(r=>Object.keys(r))));const csv=[keys.join(','),...data.map(r=>keys.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='wycliffe-'+page.toLowerCase().replaceAll(' ','-')+'.csv';a.click();URL.revokeObjectURL(a.href);};
+ const exportCsv=()=>{const data=page==='Reports'?payments:filtered;const keys=Array.from(new Set(data.flatMap(r=>Object.keys(r))));const csv=[keys.join(','),...data.map(r=>keys.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='wycliffe-'+page.toLowerCase().split(' ').join('-')+'.csv';a.click();URL.revokeObjectURL(a.href);};
  return <div className="crm-shell"><div className="crm-heading"><div><small>WYCLIFFE STUDIOS / BUSINESS</small><h2>Client Management</h2><p>Keep your clients, projects and payments in one place.</p></div><div className="crm-head-actions"><button onClick={()=>void load()}><RefreshCw size={16}/> Refresh</button><button onClick={onClose}><X size={16}/> Website editor</button></div></div>
  <nav className="crm-tabs">{pages.map((p,i)=><button key={p} className={page===p?'active':''} onClick={()=>record(p)}>{[<ChartNoAxesCombined/>,<Users/>,<ClipboardList/>,<KanbanSquare/>,<ClipboardList/>,<CircleDollarSign/>,<CalendarClock/>,<ChartNoAxesCombined/>][i]}{p}</button>)}</nav>
  {error&&<div className="crm-error">{error}</div>}{notice&&<div className="crm-success">{notice}</div>}
