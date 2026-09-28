@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, ChevronRight, ImagePlus, LayoutDashboard, Menu, Pencil, Save, Settings, Trash2, Upload, UserRound, X } from 'lucide-react';
 import './admin.css';
 import CRM from './CRM';
-import { supabase, ADMIN_UID } from './supabase';
+import { supabase, ADMIN_UID, signInAdmin } from './supabase';
 
 type Section = 'Dashboard' | 'Hero Section' | 'Portfolio' | 'Services' | 'About' | 'Process' | 'Testimonials' | 'FAQ' | 'Images' | 'Settings' | 'Overview' | 'Clients' | 'Inquiries' | 'Sales Pipeline' | 'Projects' | 'Payments' | 'Follow-ups' | 'Reports';
 type Row = Record<string, any> & { id: string };
@@ -42,10 +42,16 @@ function AdminLogin() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault(); setBusy(true); setMessage('');
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (error) setMessage(error.message);
-    setBusy(false);
+    e.preventDefault();
+    setBusy(true);
+    setMessage('');
+    try {
+      await signInAdmin(email.trim(), password);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to sign in. Please try again.');
+    } finally {
+      setBusy(false);
+    }
   };
   return <AuthShell>
     <div className='auth-mark'>W</div>
