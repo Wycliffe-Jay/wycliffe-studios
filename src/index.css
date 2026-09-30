@@ -428,3 +428,7 @@ h1,h2,h3,.big-copy,.quote p,.faq-row,.faq-row strong,.brand,.nav-links button:no
     text-overflow:ellipsis;
   }
 }
+
+/* Automatically advance client testimonials while keeping manual and accessibility controls. */
+.testimonial-track{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){.testimonial-track{scroll-behavior:auto}}
