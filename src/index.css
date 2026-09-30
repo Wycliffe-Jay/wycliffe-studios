@@ -433,3 +433,28 @@ h1,h2,h3,.big-copy,.quote p,.faq-row,.faq-row strong,.brand,.nav-links button:no
 /* Automatically advance client testimonials while keeping manual and accessibility controls. */
 .testimonial-track{scroll-behavior:smooth}
 @media(prefers-reduced-motion:reduce){.testimonial-track{scroll-behavior:auto}}
+
+
+/* Keep the enlarged brand mark, business name, navigation and CTA from colliding. */
+@media(min-width:901px){
+  .nav{gap:clamp(16px,2vw,32px)}
+  .nav .brand{flex:0 0 auto;gap:14px;white-space:nowrap}
+  .nav .brand>span:last-child{max-width:190px}
+  .nav .nav-links{
+    position:static;
+    display:flex;
+    flex:1 1 auto;
+    min-width:0;
+    justify-content:center;
+    align-items:center;
+    gap:clamp(16px,2.2vw,32px);
+    padding:0;
+    background:transparent;
+    border:0;
+  }
+  .nav .nav-cta-always{margin-left:0;margin-right:0}
+}
+@media(max-width:900px){
+  .nav .brand{gap:10px;flex:0 1 auto}
+  .nav .brand>span:last-child{max-width:120px}
+}
