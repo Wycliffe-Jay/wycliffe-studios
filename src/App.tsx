@@ -60,7 +60,7 @@ function App(){
       if(max<=2)return;
       if(track.scrollLeft>=max-step/2)track.scrollTo({left:0,behavior:'smooth'});
       else track.scrollBy({left:step,behavior:'smooth'});
-    },4000);
+    },2000);
     return()=>window.clearInterval(timer);
   },[testimonials.length]);
     useEffect(()=>{const on=(e:MouseEvent)=>setCursor({x:e.clientX,y:e.clientY});window.addEventListener('mousemove',on);const o=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('visible')),{threshold:.12});document.querySelectorAll('.reveal').forEach(e=>o.observe(e));return()=>{window.removeEventListener('mousemove',on);o.disconnect();}},[loading]);
