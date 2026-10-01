@@ -458,3 +458,11 @@ h1,h2,h3,.big-copy,.quote p,.faq-row,.faq-row strong,.brand,.nav-links button:no
   .nav .brand{gap:10px;flex:0 1 auto}
   .nav .brand>span:last-child{max-width:120px}
 }
+
+
+/* Wycliffe Studios typography: Outfit for readable copy, Space Grotesk for headings. */
+:root{font-family:'Outfit',sans-serif;font-synthesis:none}
+body,button,input,select,textarea{font-family:'Outfit',sans-serif}
+h1,h2,h3,h4,h5,h6,.brand,.proof-label strong,.marquee,.stats strong{font-family:'Space Grotesk',sans-serif}
+.preview-public{font-family:'Outfit',sans-serif}
+.preview-public h1,.preview-public h2,.preview-public h3{font-family:'Space Grotesk',sans-serif}
