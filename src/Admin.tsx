@@ -2,16 +2,17 @@ import { useEffect, useState } from 'react';
 import { Check, ChevronRight, ImagePlus, LayoutDashboard, Menu, Pencil, Save, Settings, Trash2, Upload, UserRound, X } from 'lucide-react';
 import './admin.css';
 import CRM from './CRM';
+import ClientOnboardingAdmin from './ClientOnboardingAdmin';
 import { supabase, ADMIN_UID, signInAdmin } from './supabase';
 
-type Section = 'Dashboard' | 'Hero Section' | 'Portfolio' | 'Services' | 'About' | 'Process' | 'Testimonials' | 'FAQ' | 'Images' | 'Settings' | 'Overview' | 'Clients' | 'Inquiries' | 'Sales Pipeline' | 'Projects' | 'Payments' | 'Follow-ups' | 'Reports';
+type Section = 'Dashboard' | 'Hero Section' | 'Portfolio' | 'Services' | 'About' | 'Process' | 'Testimonials' | 'FAQ' | 'Images' | 'Settings' | 'Overview' | 'Clients' | 'Inquiries' | 'Sales Pipeline' | 'Projects' | 'Payments' | 'Follow-ups' | 'Reports' | 'Client Onboarding';
 type Row = Record<string, any> & { id: string };
 
 const nav: [Section, any][] = [
   ['Dashboard', LayoutDashboard], ['Hero Section', Pencil], ['Portfolio', ImagePlus],
   ['Services', Settings], ['About', UserRound], ['Process', Settings],
   ['Testimonials', UserRound], ['FAQ', Settings], ['Images', ImagePlus], ['Settings', Settings],
-  ['Overview', LayoutDashboard], ['Clients', UserRound], ['Inquiries', Pencil], ['Sales Pipeline', Settings], ['Projects', ImagePlus], ['Payments', Settings], ['Follow-ups', Settings], ['Reports', LayoutDashboard]
+  ['Overview', LayoutDashboard], ['Clients', UserRound], ['Inquiries', Pencil], ['Sales Pipeline', Settings], ['Projects', ImagePlus], ['Payments', Settings], ['Follow-ups', Settings], ['Reports', LayoutDashboard], ['Client Onboarding', Link2]
 ];
 
 function Admin() {
@@ -123,6 +124,7 @@ function AdminCms() {
           ['Overview','Clients','Inquiries','Sales Pipeline','Projects','Payments','Follow-ups','Reports'].includes(section) ? <CRM onClose={() => select('Dashboard')} initialPage={section as any} /> :
           section === 'Images' ? <Images flash={flash} fail={fail} /> :
           section === 'Settings' ? <SettingsPage flash={flash} fail={fail} /> :
+          section === 'Client Onboarding' ? <ClientOnboardingAdmin /> :
           <FormPage section={section} flash={flash} fail={fail} />}
       </main>
     </div>
