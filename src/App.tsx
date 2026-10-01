@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, CircleDot, ExternalLink, Mail, Menu, MessageCircle, Send, Sparkles, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import Admin from './Admin';
+import ClientOnboardingForm from './ClientOnboardingForm';
 import './index.css';
 
 const supabase = createClient('https://shzyzqwjyyutvldyzuee.supabase.co', 'sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK', { global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) } });
@@ -34,6 +35,8 @@ function Placeholder({label}:{label:string}){return <div className='image-placeh
 
 function App(){
   if(window.location.hash==='#admin')return <Admin/>;
+  const onboardingMatch=window.location.hash.match(/^#onboard=([A-Za-z0-9_-]{40,100})$/);
+  if(onboardingMatch)return <ClientOnboardingForm token={onboardingMatch[1]}/>;
   const [settings,setSettings]=useState<Record<string,string>>({}),[hero,setHero]=useState<Row|null>(null),[portfolio,setPortfolio]=useState<Row[]>([]),[services,setServices]=useState<Row[]>([]),[testimonials,setTestimonials]=useState<Row[]>([]),[about,setAbout]=useState<Row|null>(null),[process,setProcess]=useState<Row[]>([]),[faqs,setFaqs]=useState<Row[]>([]);
   const testimonialTrackRef=useRef<HTMLDivElement|null>(null);
   const [loading,setLoading]=useState(true),[loadErrors,setLoadErrors]=useState<string[]>([]),[menuOpen,setMenuOpen]=useState(false),[openFaq,setOpenFaq]=useState<number|null>(null),[cursor,setCursor]=useState({x:-100,y:-100}),[quoteSent,setQuoteSent]=useState(false),[quoteBusy,setQuoteBusy]=useState(false),[quoteError,setQuoteError]=useState(''),[savedInquiry,setSavedInquiry]=useState<Row|null>(null),[contactChoiceError,setContactChoiceError]=useState('');
