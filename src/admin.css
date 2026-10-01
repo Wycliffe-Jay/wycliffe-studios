@@ -28,3 +28,8 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 
 /* Expanded website content settings */
 .settings-group{margin:22px 0;padding:18px;background:rgba(255,255,255,.62);border:1px solid var(--border);border-radius:16px;min-width:0}.settings-group>h3{margin:0 0 14px;font-size:17px;color:var(--navy)}.settings-group>.record-stack{gap:10px}.settings-group .setting-row{padding:12px;background:#fff;border:1px solid var(--border);border-radius:12px}.settings-group .setting-row .save-btn{min-width:88px;justify-content:center}.settings-help{font-size:12px;color:var(--muted);margin:-5px 0 14px}.custom-setting{margin-top:14px;grid-template-columns:1fr 1fr auto!important}@media(max-width:650px){.settings-group{padding:12px}.settings-group .setting-row{grid-template-columns:1fr}.custom-setting{grid-template-columns:1fr!important}.settings-group .setting-row .save-btn{width:100%}}
+
+
+/* Keep the admin interface consistent with the studio's typography. */
+.vadmin,.vadmin button,.vadmin input,.vadmin select,.vadmin textarea{font-family:'Outfit',sans-serif}
+.vadmin h1,.vadmin h2,.vadmin h3,.vadmin h4,.admin-auth-card h1{font-family:'Space Grotesk',sans-serif}
