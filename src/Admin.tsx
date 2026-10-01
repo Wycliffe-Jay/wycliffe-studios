@@ -3,16 +3,17 @@ import { Check, ChevronRight, ImagePlus, LayoutDashboard, Link2, Menu, Pencil, S
 import './admin.css';
 import CRM from './CRM';
 import ClientOnboardingAdmin from './ClientOnboardingAdmin';
+import { ProjectPreviewAdmin } from './ProjectPreview';
 import { supabase, ADMIN_UID, signInAdmin } from './supabase';
 
-type Section = 'Dashboard' | 'Hero Section' | 'Portfolio' | 'Services' | 'About' | 'Process' | 'Testimonials' | 'FAQ' | 'Images' | 'Settings' | 'Overview' | 'Clients' | 'Inquiries' | 'Sales Pipeline' | 'Projects' | 'Payments' | 'Follow-ups' | 'Reports' | 'Client Onboarding';
+type Section = 'Dashboard' | 'Hero Section' | 'Portfolio' | 'Services' | 'About' | 'Process' | 'Testimonials' | 'FAQ' | 'Images' | 'Settings' | 'Overview' | 'Clients' | 'Inquiries' | 'Sales Pipeline' | 'Projects' | 'Payments' | 'Follow-ups' | 'Reports' | 'Client Onboarding' | 'Project Preview';
 type Row = Record<string, any> & { id: string };
 
 const nav: [Section, any][] = [
   ['Dashboard', LayoutDashboard], ['Hero Section', Pencil], ['Portfolio', ImagePlus],
   ['Services', Settings], ['About', UserRound], ['Process', Settings],
   ['Testimonials', UserRound], ['FAQ', Settings], ['Images', ImagePlus], ['Settings', Settings],
-  ['Overview', LayoutDashboard], ['Clients', UserRound], ['Inquiries', Pencil], ['Sales Pipeline', Settings], ['Projects', ImagePlus], ['Payments', Settings], ['Follow-ups', Settings], ['Reports', LayoutDashboard], ['Client Onboarding', Link2]
+  ['Overview', LayoutDashboard], ['Client Onboarding', Link2], ['Project Preview', ImagePlus]
 ];
 
 function Admin() {
@@ -121,10 +122,11 @@ function AdminCms() {
           </div>
         </header>
         {section === 'Dashboard' ? <Dashboard /> :
-          ['Overview','Clients','Inquiries','Sales Pipeline','Projects','Payments','Follow-ups','Reports'].includes(section) ? <CRM onClose={() => select('Dashboard')} initialPage={section as any} /> :
+          section === 'Overview' ? <CRM onClose={() => select('Dashboard')} initialPage='Overview' /> :
           section === 'Images' ? <Images flash={flash} fail={fail} /> :
           section === 'Settings' ? <SettingsPage flash={flash} fail={fail} /> :
           section === 'Client Onboarding' ? <ClientOnboardingAdmin /> :
+          section === 'Project Preview' ? <ProjectPreviewAdmin /> :
           <FormPage section={section} flash={flash} fail={fail} />}
       </main>
     </div>
