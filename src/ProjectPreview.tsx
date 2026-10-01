@@ -132,7 +132,21 @@ export function PublicProjectPreview({ token }: { token: string }) {
     setBusy(true);setError('');
     const {data,error}=await supabase.functions.invoke('project-preview',{body:{token,action,feedback}});
     if(error||data?.error)setError(data?.error||'Your response could not be saved.');
-    else {setPreview({...preview,status:data.status,client_feedback:feedback});}
+    else {
+      setPreview({...preview,status:data.status,client_feedback:feedback});
+      const rawPhone = String(preview.whatsapp_number || '').replace(/\\D/g, '');
+      const phone = rawPhone.startsWith('0') ? '233' + rawPhone.slice(1) : rawPhone;
+      if (action === 'request_changes' && phone) {
+        const message = 'Hello Wycliffe, I have reviewed my project preview for ' + preview.client_name + ' and would like to request changes.\\n\\nProject: ' + preview.project_description + '\\nMy feedback: ' + feedback;
+        window.location.assign('https://wa.me/' + phone + '?text=' + encodeURIComponent(message));
+      } else if (action === 'approve') {
+        if (preview.payment_url) window.location.assign(preview.payment_url);
+        else if (phone) {
+          const message = 'Hello Wycliffe, I have approved my project preview for ' + preview.client_name + '. Please send me the payment details.\\n\\nProject: ' + preview.project_description + '\\nAgreed price: ' + money(preview.agreed_price);
+          window.location.assign('https://wa.me/' + phone + '?text=' + encodeURIComponent(message));
+        }
+      }
+    }
     setBusy(false);
   };
   if(loading)return <main className="preview-public"><div className="preview-public-card preview-message"><p>Loading your project preview...</p></div></main>;
@@ -171,7 +185,7 @@ export function PublicProjectPreview({ token }: { token: string }) {
           </> : <>
             <div className="preview-response"><span className="preview-response-check">✓</span><div><strong>Your response has been recorded</strong><p>Wycliffe will follow up with you about the next step.</p></div></div>
             {preview.client_feedback && <div className="preview-saved-feedback"><strong>Your note</strong><p>{preview.client_feedback}</p></div>}
-            {preview.status === 'Approved - Payment Pending' && preview.payment_url && <a className="preview-pay" href={preview.payment_url} target="_blank" rel="noreferrer">Continue to payment</a>}
+            {preview.status === 'Approved - Payment Pending' && preview.payment_url && <a className="preview-pay" href={preview.payment_url} target="_blank" rel="noreferrer">Continue to payment</a>}{preview.status === 'Approved - Payment Pending' && !preview.payment_url && preview.whatsapp_number && <a className="preview-pay" href={'https://wa.me/' + (String(preview.whatsapp_number).replace(/\\D/g, '').replace(/^0/, '233')) + '?text=' + encodeURIComponent('Hello Wycliffe, I approved my project preview. Please send me the payment details for ' + preview.client_name + '.')} target="_blank" rel="noreferrer">Get payment details on WhatsApp</a>}
           </>}
           {error&&<p role="alert" className="preview-error">{error}</p>}
           <p className="preview-footnote">Payment is only confirmed after Wycliffe verifies it. Final files are shared after payment is confirmed.</p>
