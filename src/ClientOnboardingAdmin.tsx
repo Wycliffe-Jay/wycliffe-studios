@@ -12,9 +12,9 @@ export default function ClientOnboardingAdmin() {
   const [message, setMessage] = useState('');
   const load = async () => {
     setBusy(true); setMessage('');
-    const { data, error } = await supabase.from('client_onboarding_links').select('token_hash').eq('active', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    const { data, error } = await supabase.from('client_onboarding_links').select('token').eq('active', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
     if (error) setMessage(error.message);
-    else if (data) setMessage('A private link is active. For security, the original link is not recoverable from its hash. Generate a new link if you lost it.');
+    else if (data?.token) { setUrl(window.location.href.split('#')[0] + '#onboard=' + data.token); setMessage('Your active private link is ready to copy.'); }
     setBusy(false);
   };
   useEffect(() => { void load(); }, []);
@@ -26,11 +26,11 @@ export default function ClientOnboardingAdmin() {
       const token_hash = await hashToken(token);
       const { error } = await supabase.from('client_onboarding_links').update({ active: false }).eq('active', true);
       if (error) throw error;
-      const { error: insertError } = await supabase.from('client_onboarding_links').insert({ token_hash, active: true });
+      const { error: insertError } = await supabase.from('client_onboarding_links').insert({ token_hash, token, active: true });
       if (insertError) throw insertError;
       const base = window.location.href.split('#')[0];
       setUrl(base + '#onboard=' + token);
-      setMessage('New private link created. Copy it now and keep it private.');
+      setMessage('New private link created. You can copy it now or return later to retrieve it from this admin page.');
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not create the link.'); }
     finally { setBusy(false); }
   };
