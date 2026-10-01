@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Copy, ExternalLink, ImagePlus, Link2, Plus, RefreshCw, Save } from 'lucide-react';
+import { Copy, ExternalLink, ImagePlus, Link2, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { supabase } from './supabase';
 
 type Preview = { id: string; client_name: string; project_description: string; preview_image_url: string; media_type?: string; agreed_price: number; payment_url: string; token: string; status: string; client_feedback: string; created_at: string };
@@ -63,6 +63,24 @@ export function ProjectPreviewAdmin() {
     if (error) setMessage(error.message); else { setMessage('Preview updated.'); await load(); }
     setBusy(false);
   };
+  const removePreview = async (row: Preview) => {
+    if (!confirm('Permanently delete this project preview and disable its private link? This cannot be undone.')) return;
+    setBusy(true); setMessage('');
+    const { error } = await supabase.from('project_previews').delete().eq('id', row.id);
+    if (error) setMessage(error.message);
+    else {
+      const marker = '/storage/v1/object/public/site-images/';
+      const at = row.preview_image_url.indexOf(marker);
+      if (at >= 0) {
+        const path = decodeURIComponent(row.preview_image_url.slice(at + marker.length).split('?')[0]);
+        const { error: storageError } = await supabase.storage.from('site-images').remove([path]);
+        if (storageError) setMessage('Preview deleted, but its uploaded file could not be removed: ' + storageError.message);
+        else setMessage('Project preview and uploaded file deleted.');
+      } else setMessage('Project preview deleted.');
+      await load();
+    }
+    setBusy(false);
+  };
   const copy = async (url: string) => {
     try { await navigator.clipboard.writeText(url); setMessage('Private preview link copied.'); }
     catch { setMessage('Copy was blocked. Tap and hold the link to copy it.'); }
@@ -90,7 +108,7 @@ export function ProjectPreviewAdmin() {
         <p>{row.project_description}</p><p><b>{money(row.agreed_price)}</b></p>
         <label className="field"><span>Status</span><select value={row.status} onChange={e=>void update(row,{status:e.target.value})}>{['Preview Ready','Approved - Payment Pending','Changes Requested','Not Approved','Paid'].map(s=><option key={s}>{s}</option>)}</select></label>
         {row.client_feedback && <p className="settings-help">Client response: {row.client_feedback}</p>}
-        <div className="setting-row"><input aria-label="Private project preview link" readOnly value={links[row.id]||''} onFocus={e=>e.currentTarget.select()} style={{flex:1,minWidth:0}}/><button className="save-btn" onClick={()=>void copy(links[row.id]||'')}><Copy size={16}/> Copy link</button><a className="add-btn" href={links[row.id]} target="_blank" rel="noreferrer"><ExternalLink size={16}/> Open</a></div>
+        <div className="setting-row"><input aria-label="Private project preview link" readOnly value={links[row.id]||''} onFocus={e=>e.currentTarget.select()} style={{flex:1,minWidth:0}}/><button className="save-btn" onClick={()=>void copy(links[row.id]||'')}><Copy size={16}/> Copy link</button><a className="add-btn" href={links[row.id]} target="_blank" rel="noreferrer"><ExternalLink size={16}/> Open</a><button className="add-btn" type="button" disabled={busy} onClick={()=>void removePreview(row)}><Trash2 size={16}/> Delete</button></div>
       </article>)}</div>
     </section>
   </div>;
