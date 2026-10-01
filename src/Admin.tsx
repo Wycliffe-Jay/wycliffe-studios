@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, ChevronRight, ImagePlus, LayoutDashboard, Menu, Pencil, Save, Settings, Trash2, Upload, UserRound, X } from 'lucide-react';
+import { Check, ChevronRight, ImagePlus, LayoutDashboard, Link2, Menu, Pencil, Save, Settings, Trash2, Upload, UserRound, X } from 'lucide-react';
 import './admin.css';
 import CRM from './CRM';
 import ClientOnboardingAdmin from './ClientOnboardingAdmin';
