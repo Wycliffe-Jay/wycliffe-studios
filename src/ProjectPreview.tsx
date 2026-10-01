@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Copy, ExternalLink, ImagePlus, Link2, Plus, RefreshCw, Save } from 'lucide-react';
 import { supabase } from './supabase';
 
-type Preview = { id: string; client_name: string; project_description: string; preview_image_url: string; agreed_price: number; payment_url: string; token: string; status: string; client_feedback: string; created_at: string };
+type Preview = { id: string; client_name: string; project_description: string; preview_image_url: string; media_type?: string; agreed_price: number; payment_url: string; token: string; status: string; client_feedback: string; created_at: string };
 const money = (value: number) => 'GH₵' + Number(value || 0).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const makeToken = () => {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -17,7 +17,8 @@ export function ProjectPreviewAdmin() {
   const [rows, setRows] = useState<Preview[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [form, setForm] = useState({ client_name: '', project_description: '', preview_image_url: '', agreed_price: '', payment_url: '' });
+  const [form, setForm] = useState({ client_name: '', project_description: '', preview_image_url: '', media_type: '', agreed_price: '', payment_url: '' });
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [links, setLinks] = useState<Record<string, string>>({});
   const load = async () => {
     setBusy(true); setMessage('');
@@ -35,11 +36,23 @@ export function ProjectPreviewAdmin() {
     e.preventDefault(); setBusy(true); setMessage('');
     try {
       const token = makeToken();
+      let mediaUrl = form.preview_image_url;
+      let mediaType = form.media_type;
+      if (mediaFile) {
+        const safeName = mediaFile.name.replace(/[^A-Za-z0-9._-]/g, '_').slice(-100);
+        const path = 'editor/project-previews/' + crypto.randomUUID() + '-' + safeName;
+        const upload = await supabase.storage.from('site-images').upload(path, mediaFile, { cacheControl: '3600', upsert: false, contentType: mediaFile.type || undefined });
+        if (upload.error) throw upload.error;
+        mediaUrl = supabase.storage.from('site-images').getPublicUrl(path).data.publicUrl;
+        mediaType = mediaFile.type.startsWith('video/') ? 'video' : 'image';
+      }
+      if (!mediaUrl) throw new Error('Please upload a preview file first.');
       const { error } = await supabase.from('project_previews').insert({
-        ...form, agreed_price: Number(form.agreed_price || 0), token, token_hash: await hashToken(token), status: 'Preview Ready'
+        ...form, preview_image_url: mediaUrl, media_type: mediaType || 'image', agreed_price: Number(form.agreed_price || 0), token, token_hash: await hashToken(token), status: 'Preview Ready'
       });
       if (error) throw error;
-      setForm({ client_name: '', project_description: '', preview_image_url: '', agreed_price: '', payment_url: '' });
+      setForm({ client_name: '', project_description: '', preview_image_url: '', media_type: '', agreed_price: '', payment_url: '' });
+      setMediaFile(null);
       setMessage('Project preview created. Copy the private link and send it to the client.');
       await load();
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Could not create preview.'); setBusy(false); }
@@ -58,11 +71,11 @@ export function ProjectPreviewAdmin() {
     <div className="form-head"><div><small>CLIENT PROJECTS</small><h2>Project Preview</h2><p>Create a private page where a client can review a design and respond.</p></div><button className="add-btn" onClick={() => void load()}><RefreshCw size={16}/> Refresh</button></div>
     <section className="settings-group">
       <h3>Create a project preview</h3>
-      <p className="settings-help">Add the client's name, project details, preview image, and agreed price. The generated link is private, but anyone who has it can open the preview.</p>
+      <p className="settings-help">Add the client's name, project details, upload the actual design file (images or video), and enter the agreed price. The generated link is private, but anyone who has it can open the preview.</p>
       <form onSubmit={create} className="record-stack">
         <label className="field"><span>Client name</span><input required maxLength={160} value={form.client_name} onChange={e=>setForm({...form,client_name:e.target.value})}/></label>
         <label className="field"><span>Project description</span><textarea required rows={3} value={form.project_description} onChange={e=>setForm({...form,project_description:e.target.value})}/></label>
-        <label className="field"><span>Preview image URL</span><input type="url" required placeholder="https://..." value={form.preview_image_url} onChange={e=>setForm({...form,preview_image_url:e.target.value})}/></label>
+        <label className="field"><span>Upload preview file (image or video)</span><input type="file" required accept="image/*,video/*" onChange={e=>setMediaFile(e.target.files?.[0] || null)}/>{mediaFile && <small>{mediaFile.name} · {(mediaFile.size / (1024 * 1024)).toFixed(1)} MB</small>}</label>
         <label className="field"><span>Agreed price (GHS)</span><input type="number" min="0" step="0.01" value={form.agreed_price} onChange={e=>setForm({...form,agreed_price:e.target.value})}/></label>
         <label className="field"><span>Payment link (optional)</span><input type="url" placeholder="https://..." value={form.payment_url} onChange={e=>setForm({...form,payment_url:e.target.value})}/></label>
         <button className="save-btn" disabled={busy}><Plus size={16}/> {busy ? 'Creating...' : 'Create preview link'}</button>
@@ -73,7 +86,7 @@ export function ProjectPreviewAdmin() {
       {!rows.length && !busy && <p className="settings-help">No project previews yet.</p>}
       <div className="record-stack">{rows.map(row=><article className="record-card" key={row.id}>
         <div className="record-title"><strong>{row.client_name}</strong><span>{row.status}</span></div>
-        {row.preview_image_url && <img src={row.preview_image_url} alt={'Preview for '+row.client_name} style={{width:'100%',maxHeight:240,objectFit:'contain',borderRadius:12,background:'#f1f5f9'}}/>}
+        {row.preview_image_url && (row.media_type === 'video' ? <video src={row.preview_image_url} controls playsInline style={{width:'100%',maxHeight:300,borderRadius:12,background:'#f1f5f9'}}/> : <img src={row.preview_image_url} alt={'Preview for '+row.client_name} style={{width:'100%',maxHeight:240,objectFit:'contain',borderRadius:12,background:'#f1f5f9'}}/>)}
         <p>{row.project_description}</p><p><b>{money(row.agreed_price)}</b></p>
         <label className="field"><span>Status</span><select value={row.status} onChange={e=>void update(row,{status:e.target.value})}>{['Preview Ready','Approved - Payment Pending','Changes Requested','Not Approved','Paid'].map(s=><option key={s}>{s}</option>)}</select></label>
         {row.client_feedback && <p className="settings-help">Client response: {row.client_feedback}</p>}
@@ -108,7 +121,7 @@ export function PublicProjectPreview({ token }: { token: string }) {
   if(error&&!preview)return <div className="preview-public"><h1>Project preview unavailable</h1><p>{error}</p></div>;
   return <main className="preview-public">
     <div className="preview-public-card"><small>WYCLIFFE STUDIOS / PROJECT PREVIEW</small><h1>Your design is ready, {preview.client_name}.</h1><p>{preview.project_description}</p>
-      {preview.preview_image_url&&<img src={preview.preview_image_url} alt="Your project design preview"/>}
+      {preview.preview_image_url&&(preview.media_type==='video'?<video src={preview.preview_image_url} controls playsInline aria-label="Your project design preview"/>:<img src={preview.preview_image_url} alt="Your project design preview"/>)}
       <div className="preview-price"><span>Agreed project price</span><strong>{money(preview.agreed_price)}</strong></div>
       <p className="preview-status">Current status: <b>{preview.status}</b></p>
       {preview.status==='Preview Ready' ? <><div className="preview-actions"><button disabled={busy} onClick={()=>void respond('approve')}>Approve &amp; Pay</button><button disabled={busy} onClick={()=>void respond('request_changes')}>Request Changes</button><button disabled={busy} onClick={()=>void respond('reject')}>I Don't Like It</button></div><label className="field"><span>Notes (required for changes or rejection)</span><textarea rows={3} value={feedback} onChange={e=>setFeedback(e.target.value)} placeholder="Tell me what you would like changed..."/></label></> : <p>Thank you. Your response has been recorded. Wycliffe will follow up with you.</p>}
