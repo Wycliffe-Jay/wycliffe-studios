@@ -42,7 +42,7 @@ export default function ClientOnboardingAdmin() {
     <div className="form-head"><div><small>PRIVATE CLIENT INTAKE</small><h2>Client onboarding</h2><p>Generate a private form link and send it only after a client contacts you through your website.</p></div></div>
     <section className="settings-group">
       <h3>Private onboarding link</h3>
-      <p className="settings-help">The link is a secret invitation. Only its hash is stored, so if you lose the original, generate a new one.</p>
+      <p className="settings-help">The link is a secret invitation stored in the admin-only table so you can retrieve and copy it later. Anyone with the link can submit the form, so share it only with the intended client.</p>
       <div className="record-stack">
         {url && <div className="setting-row"><FieldLike value={url}/><button className="save-btn" onClick={copy}><Copy size={16}/> Copy link</button></div>}
         <button className="save-btn" disabled={busy} onClick={generate}><Link2 size={16}/> {busy ? 'Working...' : url ? 'Generate new link' : 'Create private link'}</button>
