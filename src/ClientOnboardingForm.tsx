@@ -1,0 +1,16 @@
+import { useState } from 'react';
+import { CheckCircle2, Send } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import './index.css';
+const db=createClient('https://shzyzqwjyyutvldyzuee.supabase.co','sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
+export default function ClientOnboardingForm({token}:{token:string}) {
+ const [busy,setBusy]=useState(false),[done,setDone]=useState(false),[error,setError]=useState('');
+ const submit=async(e:React.FormEvent<HTMLFormElement>)=>{
+  e.preventDefault();setBusy(true);setError('');
+  const f=new FormData(e.currentTarget);
+  const {error}=await db.functions.invoke('client-onboarding',{body:{token,full_name:f.get('full_name'),business_name:f.get('business_name'),whatsapp_number:f.get('whatsapp_number'),email:f.get('email'),service_type:f.get('service_type'),budget:f.get('budget'),deadline:f.get('deadline'),project_description:f.get('project_description'),website:f.get('website')}});
+  setBusy(false);if(error){setError(error.message||'Could not submit. Please try again.');return;}setDone(true);
+ };
+ return <div className="site" style={{minHeight:'100vh',padding:'40px 20px',background:'#F7F8FA',color:'#0B0F19'}}><main style={{maxWidth:680,margin:'0 auto',padding:28,background:'#fff',borderRadius:20,boxShadow:'0 18px 60px #0b0f1912'}}><small style={{color:'#3B9BE0',letterSpacing:2}}>WYCLIFFE STUDIOS / CLIENT ONBOARDING</small><h1 style={{fontSize:'clamp(2rem,6vw,3.5rem)',margin:'16px 0'}}>Tell me about your project.</h1><p style={{color:'#5C6270'}}>Please fill in the details below so I can understand what you need and follow up.</p>
+ {done?<div role="status" style={{padding:20,background:'#eef8f1',borderRadius:12}}><CheckCircle2/> <strong>Thank you! Your details have been received.</strong><p>I’ll review your project and get back to you.</p></div>:<form onSubmit={submit} style={{display:'grid',gap:16,marginTop:24}}>{[['full_name','Full name *','text'],['business_name','Business name','text'],['whatsapp_number','WhatsApp number *','tel'],['email','Email','email'],['service_type','What design do you need? *','text'],['budget','Your budget (GHS)','text'],['deadline','Preferred deadline','text']].map(([name,label,type])=><label key={name} style={{display:'grid',gap:7,fontWeight:600}}>{label}<input name={name} type={type} required={label.includes('*')} style={{padding:13,border:'1px solid #d8dde5',borderRadius:10,font:'inherit'}}/></label>)}<label style={{display:'grid',gap:7,fontWeight:600}}>Tell me about the project *<textarea name="project_description" required rows={5} style={{padding:13,border:'1px solid #d8dde5',borderRadius:10,font:'inherit'}}/></label><label aria-hidden="true" style={{position:'absolute',left:'-10000px'}}>Leave this field empty<input name="website" tabIndex={-1} autoComplete="off"/></label>{error&&<p role="alert" style={{color:'#b42318'}}>{error}</p>}<button disabled={busy} className="primary" style={{justifyContent:'center',padding:15,border:0,borderRadius:10,background:'#3B9BE0',color:'#fff',fontWeight:700}}>{busy?'Submitting...':'Submit details'} <Send size={17}/></button><small style={{color:'#5C6270'}}>Your details will be used to manage your design request.</small></form>}</main></div>;
+}
