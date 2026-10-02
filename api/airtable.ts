@@ -1,5 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 const AIRTABLE_API = 'https://api.airtable.com/v0';
 const META_API = 'https://api.airtable.com/v0/meta';
 
@@ -15,8 +13,7 @@ function normalized(value: string) {
 }
 
 function snake(value: string) {
-  return value
-    .trim()
+  return value.trim()
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/[^a-zA-Z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '')
@@ -28,14 +25,14 @@ async function airtable(path: string, init: RequestInit = {}) {
   const response = await fetch(path, {
     ...init,
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: 'Bearer ' + token,
       'Content-Type': 'application/json',
       ...(init.headers || {}),
     },
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = body?.error?.message || body?.error || `Airtable request failed (${response.status}).`;
+    const message = body?.error?.message || body?.error || 'Airtable request failed (' + response.status + ').';
     throw new Error(message);
   }
   return body;
@@ -43,14 +40,14 @@ async function airtable(path: string, init: RequestInit = {}) {
 
 async function tables() {
   const { baseId } = env();
-  return airtable(`${META_API}/bases/${baseId}/tables`);
+  return airtable(META_API + '/bases/' + baseId + '/tables');
 }
 
 async function resolveTable(requested: string) {
   const data = await tables();
   const wanted = normalized(requested);
   const table = data.tables?.find((t: any) => normalized(t.name) === wanted);
-  if (!table) throw new Error(`Airtable table "${requested}" was not found.`);
+  if (!table) throw new Error('Airtable table "' + requested + '" was not found.');
   return table;
 }
 
@@ -77,7 +74,6 @@ function encodeFields(input: Record<string, any>, table: any) {
     const actual = actualByNormalized.get(normalized(key)) || actualByNormalized.get(normalized(snake(key)));
     if (!actual) continue;
     const field = table.fields.find((f: any) => f.name === actual);
-    const isLink = field?.type === 'multipleRecordLinks' || field?.type === 'singleLineText' && /(^|_)(client|project|inquiry)_id$/.test(key) && field?.type === 'multipleRecordLinks';
     if (field?.type === 'multipleRecordLinks') {
       fields[actual] = value ? (Array.isArray(value) ? value : [value]) : [];
     } else if (field?.type === 'number' || field?.type === 'currency' || field?.type === 'percent') {
@@ -97,14 +93,14 @@ async function listRecords(tableName: string) {
   do {
     const query = new URLSearchParams({ pageSize: '100' });
     if (offset) query.set('offset', offset);
-    const page = await airtable(`${AIRTABLE_API}/${baseId}/${encodeURIComponent(table.id)}?${query}`);
+    const page = await airtable(AIRTABLE_API + '/' + baseId + '/' + encodeURIComponent(table.id) + '?' + query);
     records.push(...(page.records || []).map((record: any) => ({ id: record.id, ...decodeFields(record.fields) })));
     offset = page.offset || '';
   } while (offset);
   return { table: table.name, records };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   try {
     if (req.method === 'GET' && req.query.action === 'tables') {
       const data = await tables();
@@ -120,16 +116,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const tableName = String(req.query.table || '');
     if (!tableName) return res.status(400).json({ error: 'Missing table parameter.' });
 
-    if (req.method === 'GET') {
-      return res.status(200).json(await listRecords(tableName));
-    }
+    if (req.method === 'GET') return res.status(200).json(await listRecords(tableName));
 
     const table = await resolveTable(tableName);
     const { baseId } = env();
 
     if (req.method === 'POST') {
       const fields = encodeFields(req.body?.fields || req.body || {}, table);
-      const data = await airtable(`${AIRTABLE_API}/${baseId}/${encodeURIComponent(table.id)}`, {
+      const data = await airtable(AIRTABLE_API + '/' + baseId + '/' + encodeURIComponent(table.id), {
         method: 'POST',
         body: JSON.stringify({ fields }),
       });
@@ -140,7 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const recordId = String(req.body?.id || req.query.id || '');
       if (!recordId) return res.status(400).json({ error: 'Missing record id.' });
       const fields = encodeFields(req.body?.fields || req.body || {}, table);
-      const data = await airtable(`${AIRTABLE_API}/${baseId}/${encodeURIComponent(table.id)}/${encodeURIComponent(recordId)}`, {
+      const data = await airtable(AIRTABLE_API + '/' + baseId + '/' + encodeURIComponent(table.id) + '/' + encodeURIComponent(recordId), {
         method: 'PATCH',
         body: JSON.stringify({ fields }),
       });
@@ -150,7 +144,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'DELETE') {
       const recordId = String(req.body?.id || req.query.id || '');
       if (!recordId) return res.status(400).json({ error: 'Missing record id.' });
-      await airtable(`${AIRTABLE_API}/${baseId}/${encodeURIComponent(table.id)}/${encodeURIComponent(recordId)}`, { method: 'DELETE' });
+      await airtable(AIRTABLE_API + '/' + baseId + '/' + encodeURIComponent(table.id) + '/' + encodeURIComponent(recordId), { method: 'DELETE' });
       return res.status(200).json({ ok: true, id: recordId });
     }
 
