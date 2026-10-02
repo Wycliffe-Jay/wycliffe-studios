@@ -1,189 +1,48 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarClock, ChartNoAxesCombined, CircleDollarSign, ClipboardList, KanbanSquare, Plus, RefreshCw, Search, Users, X, Trash2 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 import './crm.css';
 
-type AnyRow = Record<string, any> & { id: string };
-type Page = 'Overview'|'Clients'|'Inquiries'|'Sales Pipeline'|'Projects'|'Payments'|'Follow-ups'|'Reports';
-const pages: Page[] = ['Overview','Clients','Inquiries','Sales Pipeline','Projects','Payments','Follow-ups','Reports'];
-
-const config: Record<'Clients'|'Projects'|'Payments'|'Follow-ups', {
-  table:string; title:string; fields:[string,string,'client'|'project'|undefined][]; statuses?:string[]
-}> = {
-  Clients:{
-    table:'Clients', title:'Clients',
-    fields:[
-      ['client_name','Client name',undefined],['company','Company',undefined],['phone','Phone',undefined],
-      ['email','Email',undefined],['status','Status',undefined],['notes','Notes',undefined]
-    ],
-    statuses:['Prospect','Active','Inactive']
-  },
-  Projects:{
-    table:'Projects', title:'Projects',
-    fields:[
-      ['project_name','Project name',undefined],['status','Status',undefined],['deadline','Deadline',undefined],
-      ['deliverables','Deliverables',undefined],['project_value','Project value',undefined],['client','Client','client'],
-      ['started_date','Started date',undefined],['completed_date','Completed date',undefined],['notes','Notes',undefined]
-    ],
-    statuses:['Planning','In Progress','On Hold','Completed','Cancelled']
-  },
-  Payments:{
-    table:'Payments', title:'Payments',
-    fields:[
-      ['payment_amount','Payment amount',undefined],['payment_date','Payment date',undefined],
-      ['deposit_amount','Deposit amount',undefined],['payment_type','Payment type',undefined],
-      ['project','Project','project'],['client','Client','client'],['notes','Notes',undefined]
-    ],
-    statuses:['Recorded','Voided']
-  },
-  'Follow-ups':{
-    table:'Follow-ups', title:'Follow-ups',
-    fields:[
-      ['follow_up_name','Follow-up name',undefined],['follow_up_date','Follow-up date',undefined],
-      ['follow_up_notes','Follow-up notes',undefined],['status','Status',undefined],['client','Client','client']
-    ],
-    statuses:['Pending','In Progress','Completed','Cancelled','Scheduled']
-  }
+const db=createClient('https://shzyzqwjyyutvldyzuee.supabase.co','sb_publishable_bspdymEMrxAzgwjNeyxcQw_BIOHgazK');
+type AnyRow=Record<string,any>&{id:string};
+type Page='Overview'|'Clients'|'Inquiries'|'Sales Pipeline'|'Projects'|'Payments'|'Follow-ups'|'Reports';
+const pages:Page[]=['Overview','Clients','Inquiries','Sales Pipeline','Projects','Payments','Follow-ups','Reports'];
+const config:Record<Exclude<Page,'Overview'|'Sales Pipeline'|'Reports'>,{table:string;title:string;fields:[string,string,string?][];statuses?:string[]}>={
+ Clients:{table:'clients',title:'Clients',fields:[['full_name','Full name'],['business_name','Business name'],['whatsapp_number','WhatsApp number'],['email','Email'],['business_category','Category'],['location','Location'],['services_of_interest','Services of interest'],['status','Status'],['internal_notes','Internal notes']],statuses:['New','Active','Returning','Inactive','Archived']},
+ Inquiries:{table:'inquiries',title:'Inquiries',fields:[['customer_name','Customer name'],['business_name','Business name'],['whatsapp_number','WhatsApp number'],['email','Email'],['requested_service','Requested service'],['customer_budget','Budget'],['project_description','Project description'],['preferred_deadline','Preferred deadline'],['preferred_contact_method','Preferred contact'],['additional_information','Additional information'],['source','Source'],['status','Status'],['internal_notes','Internal notes']],statuses:['New','Contacted','Interested','Quotation Sent','Awaiting Decision','Awaiting Payment','Converted','Lost']},
+ Projects:{table:'projects',title:'Projects',fields:[['client_id','Client','client'],['project_name','Project name'],['service_type','Service type'],['description','Description'],['agreed_price','Agreed price'],['start_date','Start date'],['deadline','Deadline'],['status','Status'],['delivery_link','Delivery link'],['internal_notes','Internal notes']],statuses:['Awaiting Payment','Ready to Start','In Progress','Awaiting Client Feedback','Revisions Required','Completed','Cancelled']},
+ Payments:{table:'payments',title:'Payments',fields:[['project_id','Project','project'],['amount','Amount (GHS)'],['payment_method','Method'],['payment_date','Payment date'],['payment_reference','Reference'],['notes','Notes']],},
+ 'Follow-ups':{table:'follow_ups',title:'Follow-ups',fields:[['client_id','Client','client'],['inquiry_id','Inquiry','inquiry'],['reason','Reason'],['scheduled_date','Scheduled date'],['status','Status'],['notes','Notes']],statuses:['Pending','Completed','Cancelled']}
 };
-
-const money = (v:number) => 'GH₵'+Number(v||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});
-const date = (v:any) => v ? new Date(v).toLocaleDateString('en-GB') : '—';
-const isoDate = (v:any) => v ? String(v).slice(0,10) : '';
-
-async function api(table:string, method:'GET'|'POST'|'PATCH'|'DELETE'='GET', body?:any) {
-  const options: RequestInit = { method, headers:{'Content-Type':'application/json'} };
-  if (body !== undefined) options.body = JSON.stringify(body);
-  const response = await fetch('/api/airtable?table='+encodeURIComponent(table), options);
-  const data = await response.json().catch(()=>({}));
-  if (!response.ok) throw new Error(data?.error || 'Airtable request failed.');
-  return data;
-}
-
-export default function CRM({onClose,initialPage='Overview'}:{onClose:()=>void;initialPage?:Page}) {
-  const [page,setPage]=useState<Page>(initialPage);
-  const [clients,setClients]=useState<AnyRow[]>([]);
-  const [projects,setProjects]=useState<AnyRow[]>([]);
-  const [payments,setPayments]=useState<AnyRow[]>([]);
-  const [followups,setFollowups]=useState<AnyRow[]>([]);
-  const [activities,setActivities]=useState<AnyRow[]>([]);
-  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
-  const [query,setQuery]=useState(''),[editing,setEditing]=useState<AnyRow|null>(null),[creating,setCreating]=useState(false);
-
-  const load = async() => {
-    setBusy(true); setError('');
-    try {
-      const [c,p,pay,f] = await Promise.all([
-        api('Clients'),api('Projects'),api('Payments'),api('Follow-ups')
-      ]);
-      setClients(c.records||[]); setProjects(p.records||[]); setPayments(pay.records||[]); setFollowups(f.records||[]);
-      const events = [
-        ...(c.records||[]).map((r:any)=>({id:r.id,description:'Client: '+r.client_name,created:r.created_time})),
-        ...(p.records||[]).map((r:any)=>({id:r.id,description:'Project: '+r.project_name,created:r.started_date})),
-        ...(pay.records||[]).map((r:any)=>({id:r.id,description:'Payment: '+money(r.payment_amount),created:r.created_time||r.payment_date})),
-        ...(f.records||[]).map((r:any)=>({id:r.id,description:'Follow-up: '+r.follow_up_name,created:r.created_time||r.follow_up_date}))
-      ];
-      setActivities(events.sort((a,b)=>new Date(b.created||0).getTime()-new Date(a.created||0).getTime()).slice(0,20));
-    } catch(e:any) {
-      setError(e?.message||'Could not load Airtable CRM.');
-    } finally { setBusy(false); }
-  };
-
-  useEffect(()=>{void load()},[]);
-  useEffect(()=>{setPage(initialPage)},[initialPage]);
-
-  const selectedClient=(id:string)=>clients.find(c=>c.id===id);
-  const selectedProject=(id:string)=>projects.find(p=>p.id===id);
-  const paid=(id:string)=>payments.filter(p=>p.project===id).reduce((s,p)=>s+Number(p.payment_amount||0),0);
-  const revenue=payments.reduce((s,p)=>s+Number(p.payment_amount||0),0);
-  const outstanding=projects.reduce((s,p)=>s+Math.max(0,Number(p.project_value||0)-paid(p.id)),0);
-  const due=followups.filter(f=>['Pending','Scheduled','In Progress'].includes(f.status)&&new Date(f.follow_up_date)<new Date(new Date().toDateString()));
-  const today=followups.filter(f=>['Pending','Scheduled','In Progress'].includes(f.status)&&new Date(f.follow_up_date).toDateString()===new Date().toDateString());
-
-  const record=(p:Page)=>{setPage(p);setQuery('');setEditing(null);setCreating(false)};
-  const notify=(msg:string)=>{setNotice(msg);setTimeout(()=>setNotice(''),2500)};
-
-  const save=async(row:AnyRow) => {
-    if (page==='Inquiries'||page==='Sales Pipeline'||page==='Reports'||page==='Overview') return;
-    const c=config[page as keyof typeof config]; if(!c)return;
-    const fields:Record<string,any>={};
-    c.fields.forEach(([key])=>{
-      let value=row[key];
-      if(['project_value','payment_amount','deposit_amount'].includes(key)) value=value===''||value==null?null:Number(value);
-      if(['deadline','started_date','completed_date','payment_date','follow_up_date'].includes(key)) value=value||null;
-      fields[key]=value??null;
-    });
-    if(page==='Clients'&&!String(fields.client_name||'').trim()){setError('Client name is required.');return;}
-    if(page==='Projects'&&(!String(fields.project_name||'').trim()||!fields.client)){setError('Project name and client are required.');return;}
-    if(page==='Payments'&&(!fields.project||!fields.client||Number(fields.payment_amount)<=0)){setError('Choose a project and client and enter a valid payment amount.');return;}
-    if(page==='Follow-ups'&&!String(fields.follow_up_name||'').trim()){setError('Follow-up name is required.');return;}
-    setBusy(true);setError('');
-    try {
-      await api(c.table,row.id?'PATCH':'POST',row.id?{id:row.id,fields}:{fields});
-      notify('Saved successfully.');
-      setEditing(null);setCreating(false);await load();
-    } catch(e:any){setError(e?.message||'Could not save record.');}
-    finally{setBusy(false);}
-  };
-
-  const create=()=>{
-    const c=config[page as keyof typeof config]; if(!c)return;
-    const blank:AnyRow={id:''};
-    c.fields.forEach(([key])=>blank[key]=key==='status'?c.statuses?.[0]||'Recorded':'');
-    if(page==='Payments') { blank.payment_date=new Date().toISOString().slice(0,10); blank.payment_type='Mobile Money'; }
-    if(page==='Follow-ups') { blank.follow_up_date=new Date().toISOString().slice(0,16); blank.status='Scheduled'; }
-    setEditing(blank);setCreating(true);
-  };
-
-  const removeRecord=async(r:AnyRow)=>{
-    if(!confirm('Permanently delete this record? This cannot be undone.'))return;
-    const c=config[page as keyof typeof config];if(!c)return;
-    setBusy(true);setError('');
-    try{await api(c.table,'DELETE',{id:r.id});notify('Record deleted.');await load();}
-    catch(e:any){setError(e?.message||'Could not delete record.');}
-    finally{setBusy(false);}
-  };
-
-  const contact=(phone:string)=>{if(phone)window.open('https://wa.me/'+String(phone).replace(/\D/g,''),'_blank','noopener,noreferrer')};
-
-  const rows = page==='Clients'?clients:page==='Projects'?projects:page==='Payments'?payments:followups;
-  const filtered = useMemo(()=>rows.filter(r=>JSON.stringify(r).toLowerCase().includes(query.toLowerCase())),[rows,query]);
-
-  const exportCsv=()=>{
-    const data=filtered;
-    const keys=Array.from(new Set(data.flatMap(r=>Object.keys(r))));
-    const csv=[keys.join(','),...data.map(r=>keys.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(','))].join('\n');
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='wycliffe-'+page.toLowerCase().replaceAll(' ','-')+'.csv';a.click();URL.revokeObjectURL(a.href);
-  };
-
-  return <div className="crm-shell">
-    <div className="crm-heading"><div><small>WYCLIFFE STUDIOS / BUSINESS</small><h2>Client Management</h2><p>Keep your clients, projects and payments in one place.</p></div><div className="crm-head-actions"><button onClick={()=>void load()}><RefreshCw size={16}/> Refresh</button><button onClick={onClose}><X size={16}/> Website editor</button></div></div>
-    <nav className="crm-tabs">{pages.map((p,i)=><button key={p} className={page===p?'active':''} onClick={()=>record(p)}>{[<ChartNoAxesCombined/>,<Users/>,<ClipboardList/>,<KanbanSquare/>,<ClipboardList/>,<CircleDollarSign/>,<CalendarClock/>,<ChartNoAxesCombined/>][i]}{p}</button>)}</nav>
-    {error&&<div className="crm-error">{error}</div>}{notice&&<div className="crm-success">{notice}</div>}
-
-    {page==='Overview'&&<><div className="crm-metrics">
-      {[['Total Clients',clients.length],['Active Projects',projects.filter(p=>['Planning','In Progress','On Hold'].includes(p.status)).length],['Pending Payments',money(outstanding)],['Revenue',money(revenue)],['Completed Projects',projects.filter(p=>p.status==='Completed').length],['Follow-ups Due',due.length+today.length]].map(([l,v])=><article key={String(l)}><small>{l}</small><strong>{v}</strong></article>)}
-    </div><div className="crm-columns"><section className="crm-panel"><h3>Follow-ups due</h3>{[...due,...today].length?[...due,...today].map(f=><p key={f.id}><b>{f.follow_up_name}</b><small>{date(f.follow_up_date)} · {selectedClient(f.client)?.client_name||'Client'}</small></p>):<p className="crm-muted">No follow-ups due.</p>}</section><section className="crm-panel"><h3>Recent activity</h3>{activities.slice(0,8).map(a=><p key={a.id}><b>{a.description}</b><small>{date(a.created)}</small></p>)}{!activities.length&&<p className="crm-muted">Activity will appear as you add records.</p>}</section></div><div className="crm-quick">{(['Clients','Projects','Payments','Follow-ups'] as Page[]).map(p=><button key={p} onClick={()=>{record(p);setTimeout(()=>document.querySelector('.crm-create')?.dispatchEvent(new MouseEvent('click',{bubbles:true})),0)}}><Plus size={16}/> Add {p==='Follow-ups'?'Follow-up':p.slice(0,-1)}</button>)}</div></>}
-
-    {page==='Reports'&&<><div className="crm-metrics"><article><small>Total received</small><strong>{money(revenue)}</strong></article><article><small>Outstanding</small><strong>{money(outstanding)}</strong></article><article><small>Clients</small><strong>{clients.length}</strong></article><article><small>Projects</small><strong>{projects.length}</strong></article></div><section className="crm-panel"><div className="crm-table-head"><h3>Revenue by project</h3><button onClick={exportCsv}>Export CSV</button></div>{projects.map(p=><p key={p.id}><b>{p.project_name}</b><small>{selectedClient(p.client)?.client_name||'—'} · Received {money(paid(p.id))} · Value {money(p.project_value)}</small></p>)}</section></>}
-
-    {(page==='Inquiries'||page==='Sales Pipeline')&&<section className="crm-panel"><h3>{page}</h3><p className="crm-muted">This Airtable setup currently has no Inquiries table, so this section is left empty rather than inventing or duplicating data.</p></section>}
-
-    {config[page as keyof typeof config]&&<section className="crm-panel"><div className="crm-table-head"><div><h3>{config[page as keyof typeof config].title}</h3><small>{filtered.length} records</small></div><div className="crm-controls"><label><Search size={16}/><input placeholder="Search records..." value={query} onChange={e=>setQuery(e.target.value)}/></label><button className="crm-create" onClick={create}><Plus size={16}/> Add {config[page as keyof typeof config].title.slice(0,-1)}</button><button onClick={exportCsv}>Export</button></div></div>
-      <div className="crm-table-wrap"><table><thead><tr>{(page==='Clients'?['Name','Company','Phone','Status']:page==='Projects'?['Project','Client','Value','Paid','Balance','Status','Deadline']:page==='Payments'?['Date','Client','Project','Amount','Type']:['Follow-up','Client','Date','Status']).map(h=><th key={h}>{h}</th>)}<th>Actions</th></tr></thead>
-      <tbody>{filtered.map(r=><tr key={r.id}>
-        {page==='Clients'?<><td>{r.client_name}</td><td>{r.company||'—'}</td><td>{r.phone||'—'}</td><td>{r.status||'—'}</td></>:
-         page==='Projects'?<><td>{r.project_name}</td><td>{selectedClient(r.client)?.client_name||'—'}</td><td>{money(r.project_value)}</td><td>{money(paid(r.id))}</td><td>{money(Math.max(0,Number(r.project_value||0)-paid(r.id)))}</td><td>{r.status||'—'}</td><td>{date(r.deadline)}</td></>:
-         page==='Payments'?<><td>{date(r.payment_date)}</td><td>{selectedClient(r.client)?.client_name||'—'}</td><td>{selectedProject(r.project)?.project_name||'—'}</td><td>{money(r.payment_amount)}</td><td>{r.payment_type||'—'}</td></>:
-         <><td>{r.follow_up_name}</td><td>{selectedClient(r.client)?.client_name||'—'}</td><td>{date(r.follow_up_date)}</td><td>{r.status||'—'}</td></>}
-        <td className="crm-row-actions"><button onClick={()=>setEditing({...r})}>Edit</button><button className="crm-delete" onClick={()=>void removeRecord(r)} title="Permanently delete"><Trash2 size={14}/> Delete</button>{page==='Clients'&&<button onClick={()=>contact(r.phone)}>WhatsApp</button>}</td>
-      </tr>)}</tbody></table></div>{!filtered.length&&<p className="crm-muted">No records yet.</p>}</section>}
-
-    {editing&&config[page as keyof typeof config]&&<div className="crm-modal-backdrop"><form className="crm-modal" onSubmit={e=>{e.preventDefault();void save(editing)}}><div className="crm-modal-head"><h3>{creating?'Add':'Edit'} {config[page as keyof typeof config].title}</h3><button type="button" onClick={()=>setEditing(null)}><X/></button></div>
-      {config[page as keyof typeof config].fields.map(([key,label,type])=><label className="crm-field" key={key}><span>{label}</span>
-        {type==='client'?<select value={editing[key]||''} onChange={e=>setEditing({...editing,[key]:e.target.value})} required><option value="">Choose client</option>{clients.map(c=><option value={c.id} key={c.id}>{c.client_name}</option>)}</select>:
-         type==='project'?<select value={editing[key]||''} onChange={e=>setEditing({...editing,[key]:e.target.value})} required><option value="">Choose project</option>{projects.map(p=><option value={p.id} key={p.id}>{p.project_name}</option>)}</select>:
-         key==='status'?<select value={editing[key]||''} onChange={e=>setEditing({...editing,[key]:e.target.value})}>{config[page as keyof typeof config].statuses?.map(s=><option key={s}>{s}</option>)}</select>:
-         <input type={['deadline','started_date','completed_date','payment_date'].includes(key)?'date':['project_value','payment_amount','deposit_amount'].includes(key)?'number':'text'} step={['project_value','payment_amount','deposit_amount'].includes(key)?'0.01':undefined} value={editing[key]??''} onChange={e=>setEditing({...editing,[key]:e.target.value})}/>}
-      </label>)}<div className="crm-modal-actions"><button type="button" onClick={()=>setEditing(null)}>Cancel</button><button className="crm-primary" disabled={busy}>{busy?'Saving...':'Save record'}</button></div></form></div>}
-    {busy&&<div className="crm-loading">Working…</div>}
-  </div>;
+const money=(v:number)=>'GH₵'+Number(v||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const date=(v:string)=>v?new Date(v).toLocaleDateString(): '—';
+export default function CRM({onClose,initialPage='Overview'}:{onClose:()=>void;initialPage?:Page}){
+ const [page,setPage]=useState<Page>(initialPage),[clients,setClients]=useState<AnyRow[]>([]),[inquiries,setInquiries]=useState<AnyRow[]>([]),[projects,setProjects]=useState<AnyRow[]>([]),[payments,setPayments]=useState<AnyRow[]>([]),[followups,setFollowups]=useState<AnyRow[]>([]),[activities,setActivities]=useState<AnyRow[]>([]);
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[query,setQuery]=useState(''),[editing,setEditing]=useState<AnyRow|null>(null),[creating,setCreating]=useState(false);
+ const load=async()=>{setBusy(true);setError('');const names=['clients','inquiries','projects','payments','follow_ups','activity_logs'];const rs=await Promise.all(names.map(t=>db.from(t).select('*').order(t==='activity_logs'||t==='payments'||t==='follow_ups'?'created_at':'created_at',{ascending:false}).limit(500)));const bad=rs.find(r=>r.error);if(bad)setError(bad.error.message);else{setClients(rs[0].data||[]);setInquiries(rs[1].data||[]);setProjects(rs[2].data||[]);setPayments(rs[3].data||[]);setFollowups(rs[4].data||[]);setActivities(rs[5].data||[]);}setBusy(false);};
+ useEffect(()=>{void load()},[]);useEffect(()=>{setPage(initialPage)},[initialPage]);
+ const revenue=payments.filter(p=>p.status!=='Voided').reduce((s,p)=>s+Number(p.amount||0),0);
+ const paid=(id:string)=>payments.filter(p=>p.project_id===id&&p.status!=='Voided').reduce((s,p)=>s+Number(p.amount||0),0);
+ const due=followups.filter(f=>f.status==='Pending'&&new Date(f.scheduled_date)<new Date(new Date().toDateString()));
+ const today=followups.filter(f=>f.status==='Pending'&&new Date(f.scheduled_date).toDateString()===new Date().toDateString());
+ const record=(p:Page)=>{setPage(p);setQuery('');setEditing(null);setCreating(false)};
+ const log=async(entity:string,id:string,action:string,description:string)=>{await db.from('activity_logs').insert({entity_type:entity,entity_id:id,action,description});};
+ const save=async(row:AnyRow)=>{const c=config[page as keyof typeof config];if(!c)return;const payload:{[k:string]:any}={};c.fields.forEach(([key])=>{if(key==='services_of_interest')payload[key]=String(row[key]||'').split(',').map((x:string)=>x.trim()).filter(Boolean);else if(key==='agreed_price'||key==='amount')payload[key]=Number(row[key]||0);else payload[key]=row[key]??null;});if(page==='Payments'){const pr=projects.find(p=>p.id===row.project_id);payload.client_id=pr?.client_id;if(!payload.amount||payload.amount<=0){setError('Payment amount must be greater than zero.');return;}}if(page==='Projects'&&(!payload.client_id||!payload.project_name||payload.agreed_price<0)){setError('Choose a client, enter a project name, and use a valid price.');return;}if(page==='Clients'&&!String(payload.full_name||'').trim()){setError('Client name is required.');return;}if(page==='Inquiries'&&(!payload.customer_name||!payload.whatsapp_number||!payload.requested_service||!payload.project_description)){setError('Name, WhatsApp number, service, and project description are required.');return;}if(page==='Follow-ups'&&!payload.reason){setError('Follow-up reason is required.');return;}setBusy(true);setError('');const result=row.id?await db.from(c.table).update(payload).eq('id',row.id).select().single():await db.from(c.table).insert(payload).select().single();if(result.error)setError(result.error.message);else{await log(c.table,result.data.id,row.id?'updated':'created',c.title+' record '+(row.id?'updated':'created'));setNotice('Saved successfully.');setTimeout(()=>setNotice(''),2500);setCreating(false);setEditing(null);await load();}setBusy(false);};
+ const create=()=>{const c=config[page as keyof typeof config];if(!c)return;const blank:AnyRow={id:'',status:c.statuses?.[0]||'Recorded',payment_method:'Mobile Money',payment_date:new Date().toISOString().slice(0,10),scheduled_date:new Date().toISOString().slice(0,16),services_of_interest:[]};setEditing(blank);setCreating(true);};
+ const contact=(phone:string)=>phone&&window.open('https://wa.me/'+phone.replace(/\D/g,''),'_blank','noopener,noreferrer');
+ const removeRecord=async(r:AnyRow)=>{const label=page==='Clients'?'client':page==='Inquiries'?'inquiry':page==='Projects'?'project':page==='Payments'?'payment':'follow-up';if(!confirm('Permanently delete this '+label+'? This cannot be undone.'))return;setBusy(true);setError('');const table=config[page as keyof typeof config]?.table;if(!table){setBusy(false);return;}const {error:deleteError}=await db.from(table).delete().eq('id',r.id);if(deleteError){setError(deleteError.message.includes('foreign key')?'This record is linked to other records. Delete its related payments or projects first, then try again.':deleteError.message);}else{setNotice(label[0].toUpperCase()+label.slice(1)+' deleted.');setTimeout(()=>setNotice(''),2500);await load();}setBusy(false);};
+ const rows=page==='Clients'?clients:page==='Inquiries'?inquiries:page==='Projects'?projects:page==='Payments'?payments:followups;
+ const filtered=rows.filter(r=>JSON.stringify(r).toLowerCase().includes(query.toLowerCase()));
+ const selectedClient=(id:string)=>clients.find(c=>c.id===id);
+ const selectedProject=(id:string)=>projects.find(p=>p.id===id);
+ const exportCsv=()=>{const data=page==='Reports'?payments:filtered;const keys=Array.from(new Set(data.flatMap(r=>Object.keys(r))));const csv=[keys.join(','),...data.map(r=>keys.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='wycliffe-'+page.toLowerCase().split(' ').join('-')+'.csv';a.click();URL.revokeObjectURL(a.href);};
+ return <div className="crm-shell"><div className="crm-heading"><div><small>WYCLIFFE STUDIOS / BUSINESS</small><h2>Client Management</h2><p>Keep your clients, projects and payments in one place.</p></div><div className="crm-head-actions"><button onClick={()=>void load()}><RefreshCw size={16}/> Refresh</button><button onClick={onClose}><X size={16}/> Website editor</button></div></div>
+ <nav className="crm-tabs">{pages.map((p,i)=><button key={p} className={page===p?'active':''} onClick={()=>record(p)}>{[<ChartNoAxesCombined/>,<Users/>,<ClipboardList/>,<KanbanSquare/>,<ClipboardList/>,<CircleDollarSign/>,<CalendarClock/>,<ChartNoAxesCombined/>][i]}{p}</button>)}</nav>
+ {error&&<div className="crm-error">{error}</div>}{notice&&<div className="crm-success">{notice}</div>}
+ {page==='Overview'&&<><div className="crm-metrics">{[['Total Clients',clients.filter(c=>c.status!=='Archived').length],['New Inquiries',inquiries.filter(i=>i.status==='New').length],['Active Projects',projects.filter(p=>['Ready to Start','In Progress','Awaiting Client Feedback','Revisions Required'].includes(p.status)).length],['Pending Payments',money(projects.reduce((s,p)=>s+Math.max(0,Number(p.agreed_price)-paid(p.id)),0))],['Revenue This Month',money(payments.filter(p=>p.status!=='Voided'&&new Date(p.payment_date).getMonth()===new Date().getMonth()&&new Date(p.payment_date).getFullYear()===new Date().getFullYear()).reduce((s,p)=>s+Number(p.amount),0))],['Completed Projects',projects.filter(p=>p.status==='Completed').length]].map(([l,v])=><article key={String(l)}><small>{l}</small><strong>{v}</strong></article>)}</div><div className="crm-columns"><section className="crm-panel"><h3>Follow-ups due</h3>{[...due,...today].length? [...due,...today].map(f=><p key={f.id}><b>{f.reason}</b><small>{date(f.scheduled_date)} · {selectedClient(f.client_id)?.full_name||'Inquiry'}</small></p>):<p className="crm-muted">No follow-ups due. You're all caught up.</p>}</section><section className="crm-panel"><h3>Recent activity</h3>{activities.slice(0,8).map(a=><p key={a.id}><b>{a.description}</b><small>{date(a.created_at)}</small></p>)}{!activities.length&&<p className="crm-muted">Activity will appear as you add records.</p>}</section></div><div className="crm-quick">{['Clients','Inquiries','Projects','Payments','Follow-ups'].map(p=><button key={p} onClick={()=>{record(p as Page);if(p!=='Inquiries')setTimeout(()=>{const b=document.querySelector('.crm-create') as HTMLButtonElement|null;b?.click()},0)}}><Plus size={16}/> Add {p==='Follow-ups'?'Follow-up':p.slice(0,-1)}</button>)}</div></>}
+ {page==='Reports'&&<><div className="crm-metrics"><article><small>Total received</small><strong>{money(revenue)}</strong></article><article><small>Outstanding</small><strong>{money(projects.reduce((s,p)=>s+Math.max(0,Number(p.agreed_price)-paid(p.id)),0))}</strong></article><article><small>New clients this month</small><strong>{clients.filter(c=>new Date(c.created_at).getMonth()===new Date().getMonth()).length}</strong></article><article><small>Inquiry conversion</small><strong>{inquiries.length?Math.round(inquiries.filter(i=>i.status==='Converted').length/inquiries.length*100)+'%':'0%'}</strong></article></div><section className="crm-panel"><div className="crm-table-head"><h3>Revenue by project</h3><button onClick={exportCsv}>Export CSV</button></div>{projects.map(p=><p key={p.id}><b>{p.project_name}</b><small>{selectedClient(p.client_id)?.full_name} · Received {money(paid(p.id))} · Price {money(p.agreed_price)}</small></p>)}</section></>}
+ {page==='Sales Pipeline'&&<div className="crm-pipeline">{['New','Contacted','Interested','Quotation Sent','Awaiting Decision','Awaiting Payment','Converted','Lost'].map(status=><section key={status}><h3>{status}</h3>{inquiries.filter(i=>i.status===status).map(i=><article key={i.id}><b>{i.customer_name}</b><small>{i.business_name||i.requested_service}</small><select value={i.status} onChange={async e=>{await db.from('inquiries').update({status:e.target.value}).eq('id',i.id);await log('inquiries',i.id,'status', 'Inquiry moved to '+e.target.value);await load()}}>{['New','Contacted','Interested','Quotation Sent','Awaiting Decision','Awaiting Payment','Converted','Lost'].map(s=><option>{s}</option>)}</select></article>)}</section>)}</div>}
+ {config[page as keyof typeof config]&&<section className="crm-panel"><div className="crm-table-head"><div><h3>{config[page as keyof typeof config].title}</h3><small>{filtered.length} records</small></div><div className="crm-controls"><label><Search size={16}/><input placeholder="Search records..." value={query} onChange={e=>setQuery(e.target.value)}/></label><button className="crm-create" onClick={create}><Plus size={16}/> Add {config[page as keyof typeof config].title.slice(0,-1)}</button></div></div><div className="crm-table-wrap"><table><thead><tr>{(page==='Clients'?['Name','Business','WhatsApp','Category','Status']:page==='Inquiries'?['Name','Business','Service','Budget','Status']:page==='Projects'?['Project','Client','Price','Paid','Balance','Status','Deadline']:page==='Payments'?['Date','Client','Project','Amount','Method','Status']:['Reason','Client','Scheduled','Status']).map(h=><th>{h}</th>)}<th>Actions</th></tr></thead><tbody>{filtered.map(r=><tr key={r.id}>{page==='Clients'?<><td>{r.full_name}</td><td>{r.business_name||'—'}</td><td>{r.whatsapp_number||'—'}</td><td>{r.business_category}</td><td>{r.status}</td></>:page==='Inquiries'?<><td>{r.customer_name}</td><td>{r.business_name||'—'}</td><td>{r.requested_service}</td><td>{r.customer_budget||'—'}</td><td><select value={r.status} onChange={async e=>{await db.from('inquiries').update({status:e.target.value}).eq('id',r.id);await load()}}>{config.Inquiries.statuses?.map(s=><option key={s}>{s}</option>)}</select></td></>:page==='Projects'?<><td>{r.project_name}</td><td>{selectedClient(r.client_id)?.full_name||'—'}</td><td>{money(r.agreed_price)}</td><td>{money(paid(r.id))}</td><td>{money(Math.max(0,Number(r.agreed_price)-paid(r.id)))}</td><td>{r.status}</td><td>{date(r.deadline)}</td></>:page==='Payments'?<><td>{date(r.payment_date)}</td><td>{selectedClient(r.client_id)?.full_name||'—'}</td><td>{selectedProject(r.project_id)?.project_name||'—'}</td><td>{money(r.amount)}</td><td>{r.payment_method}</td><td>{r.status}</td></>:<><td>{r.reason}</td><td>{selectedClient(r.client_id)?.full_name||'Inquiry'}</td><td>{date(r.scheduled_date)}</td><td><select value={r.status} onChange={async e=>{await db.from('follow_ups').update({status:e.target.value,completed_at:e.target.value==='Completed'?new Date().toISOString():null}).eq('id',r.id);await load()}}>{config['Follow-ups'].statuses?.map(s=><option key={s}>{s}</option>)}</select></td></>}<td className="crm-row-actions"><button onClick={()=>{setEditing({...r,services_of_interest:Array.isArray(r.services_of_interest)?r.services_of_interest.join(', '):r.services_of_interest});setCreating(false)}}>Edit</button><button className="crm-delete" onClick={()=>void removeRecord(r)} title="Permanently delete"><Trash2 size={14}/> Delete</button>{page==='Clients'&&<button onClick={async()=>{if(confirm('Archive this client?')){await db.from('clients').update({status:'Archived'}).eq('id',r.id);await load()}}}>Archive</button>}{page==='Inquiries'&&<button onClick={async()=>{let client=clients.find(c=>c.whatsapp_number===r.whatsapp_number);if(!client){const ins=await db.from('clients').insert({full_name:r.customer_name,business_name:r.business_name,whatsapp_number:r.whatsapp_number,email:r.email,business_category:'Other',status:'New'}).select().single();if(ins.error){setError(ins.error.message);return;}client=ins.data;}await db.from('inquiries').update({client_id:client.id,status:'Converted'}).eq('id',r.id);await log('inquiries',r.id,'converted','Inquiry converted to client');await load()}}>Convert</button>}{page==='Payments'&&r.status!=='Voided'&&<button onClick={async()=>{const reason=prompt('Reason for voiding this payment?');if(reason){await db.from('payments').update({status:'Voided',void_reason:reason}).eq('id',r.id);await load()}}}>Void</button>}{page==='Clients'&&<button onClick={()=>contact(r.whatsapp_number)}>WhatsApp</button>}</td></tr>)}</tbody></table></div>{!filtered.length&&<p className="crm-muted">No records yet. Add one to get started.</p>}</section>}
+ {editing&&<div className="crm-modal-backdrop"><form className="crm-modal" onSubmit={e=>{e.preventDefault();void save(editing)}}><div className="crm-modal-head"><h3>{creating?'Add':'Edit'} {config[page as keyof typeof config]?.title}</h3><button type="button" onClick={()=>setEditing(null)}><X/></button></div>{config[page as keyof typeof config]?.fields.map(([key,label,type])=><label className="crm-field" key={key}><span>{label}</span>{type==='client'?<select value={editing[key]||''} onChange={e=>setEditing({...editing,[key]:e.target.value})} required><option value="">Choose client</option>{clients.filter(c=>c.status!=='Archived').map(c=><option value={c.id}>{c.full_name}</option>)}</select>:type==='project'?<select value={editing[key]||''} onChange={e=>setEditing({...editing,[key]:e.target.value})} required><option value="">Choose project</option>{projects.map(p=><option value={p.id}>{p.project_name}</option>)}</select>:key==='status'?<select value={editing[key]||''} onChange={e=>setEditing({...editing,[key]:e.target.value})}>{config[page as keyof typeof config].statuses?.map(s=><option key={s}>{s}</option>)}</select>:<input type={key==='deadline'?'date':key==='start_date'?'date':key==='scheduled_date'?'datetime-local':key==='payment_date'?'date':key==='agreed_price'||key==='amount'?'number':'text'} step={key==='agreed_price'||key==='amount'?'0.01':undefined} min={key==='agreed_price'||key==='amount'?'0':undefined} required={['full_name','customer_name','whatsapp_number','requested_service','project_description','project_name','service_type','reason'].includes(key)} value={Array.isArray(editing[key])?editing[key].join(', '):editing[key]||''} onChange={e=>setEditing({...editing,[key]:e.target.value})}/>}</label>)}<div className="crm-modal-actions"><button type="button" onClick={()=>setEditing(null)}>Cancel</button><button className="crm-primary" disabled={busy}>{busy?'Saving...':'Save record'}</button></div></form></div>}
+ {busy&&<div className="crm-loading">Working…</div>}</div>;
 }
